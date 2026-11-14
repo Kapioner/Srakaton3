@@ -26,6 +26,9 @@ export type Satellite = 'Terra' | 'Aqua' | 'S-NPP' | 'NOAA-20' | 'NOAA-21';
  */
 export type Metric = 'h' | 'h_modis' | 'h_viirs' | 'raw';
 
+/** Where the numbers come from: the ETL Parquet dataset, or the bundled sample responses. */
+export type DataSource = 'parquet' | 'fixtures';
+
 export interface QueryEcho {
   bbox: Bbox | null;
   from: string;
@@ -50,6 +53,7 @@ export interface CalibrationFactor {
 }
 
 export interface MetaResponse {
+  source: DataSource;
   dateRange: { from: string; to: string };
   bbox: Bbox;
   countries: string[];
@@ -152,8 +156,38 @@ export interface GridFeature {
 
 export interface GridResponse {
   type: 'FeatureCollection';
+  /** `res` is the cell size actually used: the server coarsens it on big regions (GRID_MAX_CELLS). */
   query: QueryEcho & { res: number };
+  /** true when more cells matched than the server limit (the strongest ones are kept). */
+  truncated?: boolean;
   features: GridFeature[];
+}
+
+// ---- GET /api/regions --------------------------------------------------------
+// Countries present in the dataset, with the extent of their fire activity (for the region picker).
+
+export interface Region {
+  country: string;
+  bbox: Bbox;
+  /** Harmonized total over the whole dataset. */
+  h: number;
+}
+
+export interface RegionsResponse {
+  source: DataSource;
+  regions: Region[];
+}
+
+// ---- GET /api/health -------------------------------------------------------
+
+export interface HealthResponse {
+  ok: boolean;
+  duckdb: string;
+  source: DataSource;
+  /** Why the server fell back to fixtures, if it did. */
+  reason: string | null;
+  parquetDir: string;
+  limits: { memoryLimit: string; threads: number; queryTimeoutMs: number; gridMaxCells: number; exportMaxRows: number };
 }
 
 // ---- GET /api/points?limit=50000 -------------------------------------------

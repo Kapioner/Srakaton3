@@ -2,9 +2,11 @@ import type {
   Bbox,
   CalendarResponse,
   GridResponse,
+  HealthResponse,
   MetaResponse,
   Metric,
   PointsResponse,
+  RegionsResponse,
   SeriesResponse,
   SummaryResponse,
 } from '../../shared/api.ts';
@@ -25,8 +27,8 @@ function buildUrl(path: string, params: Record<string, unknown>): string {
   return qs ? `${path}?${qs}` : path;
 }
 
-async function get<T>(path: string, params: Record<string, unknown> = {}): Promise<T> {
-  const res = await fetch(buildUrl(path, params));
+async function get<T>(path: string, params: Record<string, unknown> = {}, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(buildUrl(path, params), { signal });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     throw new Error(body?.message ?? body?.error ?? `HTTP ${res.status}`);
@@ -34,23 +36,22 @@ async function get<T>(path: string, params: Record<string, unknown> = {}): Promi
   return res.json() as Promise<T>;
 }
 
-/** GET /api/health (server-only shape, not part of the shared contract). */
-export interface HealthResponse {
-  ok: boolean;
-  duckdb: string;
-  harmonizedRows: number | null;
-  fixtures: boolean;
-}
+/** Only the query fields the API knows (the panel keeps a label too). */
+const params = (f: Filters) => ({ bbox: f.bbox, from: f.from, to: f.to });
 
 export const api = {
   health: () => get<HealthResponse>('/api/health'),
   meta: () => get<MetaResponse>('/api/meta'),
-  calendar: (f: Filters, granularity: 'month' | 'day' = 'month', metric: Metric = 'h') =>
-    get<CalendarResponse>('/api/calendar', { ...f, granularity, metric }),
-  summary: (f: Filters) => get<SummaryResponse>('/api/summary', { ...f }),
-  series: (f: Filters, by: 'year' | 'month' = 'year') => get<SeriesResponse>('/api/series', { ...f, by }),
-  grid: (f: Filters, res = 0.1) => get<GridResponse>('/api/grid', { ...f, res }),
-  points: (f: Filters, limit = 50_000) => get<PointsResponse>('/api/points', { ...f, limit }),
+  regions: () => get<RegionsResponse>('/api/regions'),
+  calendar: (f: Filters, signal?: AbortSignal, granularity: 'month' | 'day' = 'month', metric: Metric = 'h') =>
+    get<CalendarResponse>('/api/calendar', { ...params(f), granularity, metric }, signal),
+  summary: (f: Filters, signal?: AbortSignal) => get<SummaryResponse>('/api/summary', params(f), signal),
+  series: (f: Filters, signal?: AbortSignal, by: 'year' | 'month' = 'year') =>
+    get<SeriesResponse>('/api/series', { ...params(f), by }, signal),
+  grid: (f: Filters, signal?: AbortSignal, res = 0.1) => get<GridResponse>('/api/grid', { ...params(f), res }, signal),
+  points: (f: Filters, signal?: AbortSignal, limit = 5_000) => get<PointsResponse>('/api/points', { ...params(f), limit }, signal),
   /** Link target for the CSV download button. */
-  exportCsvUrl: (f: Filters) => buildUrl('/api/export.csv', { ...f }),
+  exportCsvUrl: (f: Filters) => buildUrl('/api/export.csv', params(f)),
 };
+
+export const isAbort = (e: unknown) => e instanceof DOMException && e.name === 'AbortError';

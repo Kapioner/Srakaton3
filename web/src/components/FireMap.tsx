@@ -1,7 +1,7 @@
 import { Crosshair, Globe2, Maximize2, Minus, Plus } from 'lucide-react';
 import * as maplibregl from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Bbox, GridResponse } from '../../../shared/api.ts';
 import type { WatchLocation } from '../features/locations.ts';
 import { dataColors, fireRamp, theme } from '../theme.ts';
@@ -11,22 +11,31 @@ const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] };
 
 interface Props {
   grid: GridResponse | null;
+  /** Area to fit the map to (the query region, or the dataset extent). */
   bbox: Bbox | null;
+  /** The query region, drawn as an outline; null = whole dataset. */
+  selection: Bbox | null;
+  /** Called with the visible area after every pan/zoom ("use map view" in the query panel). */
+  onViewChange?: (view: Bbox) => void;
   locations: WatchLocation[];
   selectedId: string | null;
   addMode: boolean;
   onAdd: (lngLat: { lng: number; lat: number }) => void;
   onSelect: (id: string) => void;
+  /** Shifts the map controls left while the locations drawer covers the right edge. */
+  drawerOpen?: boolean;
+  /** Overlays rendered inside the map frame (the locations drawer and its toggle). */
+  children?: ReactNode;
 }
 
 /** MapLibre map: harmonized fire grid (fire ramp) + the user's watch locations (violet). */
-export function FireMap({ grid, bbox, locations, selectedId, addMode, onAdd, onSelect }: Props) {
+export function FireMap({ grid, bbox, selection, onViewChange, locations, selectedId, addMode, onAdd, onSelect, drawerOpen, children }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [ready, setReady] = useState(false);
   // Latest callbacks/flags for the long-lived map event handlers.
-  const live = useRef({ addMode, onAdd, onSelect });
-  live.current = { addMode, onAdd, onSelect };
+  const live = useRef({ addMode, onAdd, onSelect, onViewChange });
+  live.current = { addMode, onAdd, onSelect, onViewChange };
 
   useEffect(() => {
     if (!container.current || map.current) return;
@@ -46,7 +55,13 @@ export function FireMap({ grid, bbox, locations, selectedId, addMode, onAdd, onS
     instance.on('load', () => {
       instance.addSource('fires', { type: 'geojson', data: EMPTY });
       instance.addSource('locations', { type: 'geojson', data: EMPTY });
-      const maxH = ['ln', ['+', 1, ['get', 'h']]] as unknown as maplibregl.ExpressionSpecification;
+      instance.addSource('selection', { type: 'geojson', data: EMPTY });
+      instance.addLayer({
+        id: 'selection',
+        type: 'line',
+        source: 'selection',
+        paint: { 'line-color': theme.bone, 'line-width': 1.5, 'line-dasharray': [3, 2], 'line-opacity': 0.85 },
+      });
       instance.addLayer({
         id: 'fires-glow',
         type: 'circle',
@@ -64,18 +79,9 @@ export function FireMap({ grid, bbox, locations, selectedId, addMode, onAdd, onS
         source: 'fires',
         paint: {
           // 0.1 deg cells; colour by ln(1 + h) on the same fire ramp as the calendar.
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 2.5, 6, 5, 8, 11, 10, 26],
-          'circle-color': [
-            'interpolate',
-            ['linear'],
-            maxH,
-            0, fireRamp[2],
-            0.5, fireRamp[3],
-            1, fireRamp[4],
-            2, fireRamp[5],
-            3, fireRamp[6],
-            4, fireRamp[7],
-          ],
+          // Radius and colour stops depend on the data (cell size, max value): set in the grid effect below.
+          'circle-radius': radiusFor(0.1),
+          'circle-color': colourFor(4),
           'circle-opacity': 0.9,
           'circle-stroke-width': 0.5,
           'circle-stroke-color': theme.panel,
@@ -86,9 +92,9 @@ export function FireMap({ grid, bbox, locations, selectedId, addMode, onAdd, onS
         type: 'circle',
         source: 'locations',
         paint: {
-          'circle-radius': ['case', ['get', 'selected'], 14, 10],
+          'circle-radius': ['case', ['get', 'selected'], 16, 12],
           'circle-color': 'transparent',
-          'circle-stroke-width': 1.5,
+          'circle-stroke-width': 2,
           'circle-stroke-color': dataColors.location,
         },
       });
@@ -97,9 +103,9 @@ export function FireMap({ grid, bbox, locations, selectedId, addMode, onAdd, onS
         type: 'circle',
         source: 'locations',
         paint: {
-          'circle-radius': 4.5,
+          'circle-radius': 6,
           'circle-color': dataColors.location,
-          'circle-stroke-width': 2,
+          'circle-stroke-width': 2.5,
           'circle-stroke-color': theme.bone,
         },
       });
@@ -114,8 +120,12 @@ export function FireMap({ grid, bbox, locations, selectedId, addMode, onAdd, onS
       if (live.current.addMode) live.current.onAdd(e.lngLat);
     });
     for (const layer of ['locations', 'fires']) {
-      instance.on('mouseenter', layer, () => (instance.getCanvas().style.cursor = 'pointer'));
-      instance.on('mouseleave', layer, () => (instance.getCanvas().style.cursor = ''));
+      instance.on('mouseenter', layer, () => {
+        if (!live.current.addMode) instance.getCanvas().style.cursor = 'pointer';
+      });
+      instance.on('mouseleave', layer, () => {
+        instance.getCanvas().style.cursor = live.current.addMode ? 'crosshair' : '';
+      });
     }
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'fire-popup', offset: 10 });
     instance.on('mousemove', 'fires', (e) => {
@@ -128,6 +138,12 @@ export function FireMap({ grid, bbox, locations, selectedId, addMode, onAdd, onS
         .addTo(instance);
     });
     instance.on('mouseleave', 'fires', () => popup.remove());
+    const reportView = () => {
+      const b = instance.getBounds();
+      live.current.onViewChange?.([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].map((v) => Math.round(v * 1000) / 1000) as Bbox);
+    };
+    instance.on('moveend', reportView);
+    instance.once('idle', reportView);
 
     return () => {
       instance.remove();
@@ -141,7 +157,36 @@ export function FireMap({ grid, bbox, locations, selectedId, addMode, onAdd, onS
     const m = map.current;
     if (!ready || !m) return;
     (m.getSource('fires') as maplibregl.GeoJSONSource).setData((grid as unknown as FeatureCollection) ?? EMPTY);
+    if (grid) {
+      // Scale colours to this result (a 25-year total and a single week differ by orders of magnitude).
+      const maxLn = Math.max(1, ...grid.features.map((f) => Math.log(1 + f.properties.h)));
+      m.setPaintProperty('fires', 'circle-color', colourFor(maxLn));
+      m.setPaintProperty('fires', 'circle-radius', radiusFor(grid.query.res));
+    }
   }, [grid, ready]);
+
+  useEffect(() => {
+    const m = map.current;
+    if (!ready || !m) return;
+    (m.getSource('selection') as maplibregl.GeoJSONSource).setData(
+      selection
+        ? {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: [
+                [selection[0], selection[1]],
+                [selection[2], selection[1]],
+                [selection[2], selection[3]],
+                [selection[0], selection[3]],
+                [selection[0], selection[1]],
+              ],
+            },
+          }
+        : EMPTY,
+    );
+  }, [selection, ready]);
 
   useEffect(() => {
     const m = map.current;
@@ -157,27 +202,37 @@ export function FireMap({ grid, bbox, locations, selectedId, addMode, onAdd, onS
   }, [locations, selectedId, ready]);
 
   useEffect(() => {
-    if (bbox) map.current?.fitBounds([bbox[0], bbox[1], bbox[2], bbox[3]], { padding: 40, duration: 0 });
-  }, [bbox]);
+    if (bbox) map.current?.fitBounds([bbox[0], bbox[1], bbox[2], bbox[3]], { padding: 40, duration: 600, maxZoom: 9 });
+    // Re-fit only when the numbers change, not on every new array instance.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bbox?.join(',')]);
 
   useEffect(() => {
     const loc = locations.find((l) => l.id === selectedId);
-    if (loc) map.current?.flyTo({ center: [loc.longitude, loc.latitude], zoom: Math.max(map.current.getZoom(), 8), duration: 900 });
+    const m = map.current;
+    if (loc && m && !m.getBounds().contains([loc.longitude, loc.latitude])) {
+      m.flyTo({ center: [loc.longitude, loc.latitude], duration: 900 });
+    }
     // Fly only when the selection changes, not when other locations are edited.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
   useEffect(() => {
-    const canvas = map.current?.getCanvas();
-    if (canvas) canvas.style.cursor = addMode ? 'crosshair' : '';
-  }, [addMode]);
+    const m = map.current;
+    if (!m) return;
+    m.getCanvas().style.cursor = addMode ? 'crosshair' : '';
+    if (ready) {
+      m.setPaintProperty('fires', 'circle-opacity', addMode ? 0.25 : 0.9);
+      m.setPaintProperty('fires-glow', 'circle-opacity', addMode ? 0.03 : 0.12);
+    }
+  }, [addMode, ready]);
 
   const resetView = () => {
     if (bbox) map.current?.fitBounds([bbox[0], bbox[1], bbox[2], bbox[3]], { padding: 40, duration: 900 });
   };
 
   return (
-    <div className="map-container">
+    <div className={`map-container ${drawerOpen ? 'drawer-open' : ''}`}>
       <div ref={container} className="map-canvas" />
 
       <div className="map-overlay top">
@@ -185,7 +240,9 @@ export function FireMap({ grid, bbox, locations, selectedId, addMode, onAdd, onS
           <span className="live-dot" />
           Fire grid · {grid ? `${grid.query.from} → ${grid.query.to}` : 'loading'}
         </span>
-        <span className="map-tag ghost mono">{grid ? `${grid.features.length} cells · ${grid.query.res}°` : ''}</span>
+        <span className="map-tag ghost mono">
+          {grid ? `${grid.features.length} cells · ${grid.query.res}°${grid.truncated ? ' · strongest only' : ''}` : ''}
+        </span>
       </div>
 
       {addMode && (
@@ -211,6 +268,8 @@ export function FireMap({ grid, bbox, locations, selectedId, addMode, onAdd, onS
         </button>
       </div>
 
+      {children}
+
       <div className="map-legend" aria-label="Map legend">
         <span className="label">Fire cell-days</span>
         <span className="ramp" />
@@ -219,4 +278,18 @@ export function FireMap({ grid, bbox, locations, selectedId, addMode, onAdd, onS
       </div>
     </div>
   );
+}
+
+/** Circle colour on ln(1 + h), stretched over this result's range on the fire ramp. */
+function colourFor(maxLn: number): maplibregl.ExpressionSpecification {
+  const stops = fireRamp.slice(2); // skip the near-black end: dots must stand out on the dark basemap
+  const expr: unknown[] = ['interpolate', ['linear'], ['ln', ['+', 1, ['get', 'h']]]];
+  stops.forEach((c, i) => expr.push((maxLn * i) / (stops.length - 1), c));
+  return expr as maplibregl.ExpressionSpecification;
+}
+
+/** Circle radius by zoom, larger for coarser cells (the server coarsens big regions). */
+function radiusFor(res: number): maplibregl.ExpressionSpecification {
+  const k = Math.min(8, Math.max(1, res / 0.1)) ** 0.75;
+  return ['interpolate', ['exponential', 2], ['zoom'], 2, 1.2 * k, 5, 3 * k, 8, 11 * k, 11, 60 * k] as maplibregl.ExpressionSpecification;
 }

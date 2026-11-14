@@ -23,9 +23,23 @@ const ANOMALY_LIMIT = 3; // +-3 = 1/8x .. 8x
 const toLog2 = (r: number) => Math.max(-ANOMALY_LIMIT, Math.min(ANOMALY_LIMIT, Math.log2(Math.max(r, 1 / 2 ** ANOMALY_LIMIT))));
 
 /** Year x month heatmap of harmonized fire activity: absolute counts or the anomaly against the long-term mean. */
-export function Calendar({ data, mode = 'count' }: { data: CalendarResponse; mode?: CalendarMode }) {
+interface Props {
+  data: CalendarResponse;
+  mode?: CalendarMode;
+  /** Months overlapping this period get a light outline (the selected period, compared with the rest). */
+  highlight?: { from: string | null; to: string | null } | null;
+}
+
+export function Calendar({ data, mode = 'count', highlight = null }: Props) {
   const years = [...new Set(data.cells.map((c) => c.year))].sort((a, b) => a - b);
   const maxLog = Math.max(1, ...data.cells.map((c) => toLog(c.value ?? 0)));
+
+  const ym = (d: string | null, fallback: string) => (d ?? fallback).slice(0, 7);
+  const inHighlight = (y: number, m: number) => {
+    if (!highlight) return false;
+    const key = `${y}-${String(m).padStart(2, '0')}`;
+    return key >= ym(highlight.from, '0000-00') && key <= ym(highlight.to, '9999-99');
+  };
 
   const colourKey = (value: number | null, anomaly: number | null) => {
     if (mode === 'anomaly') return anomaly === null ? null : toLog2(anomaly);
@@ -55,8 +69,8 @@ export function Calendar({ data, mode = 'count' }: { data: CalendarResponse; mod
     textStyle: { fontFamily: theme.fontSans },
     tooltip: {
       ...tooltipStyle,
-      formatter: (p: { data: Datum }) => {
-        const [m, y, value, anomaly, rank] = p.data;
+      formatter: (p: { value: Datum }) => {
+        const [m, y, value, anomaly, rank] = p.value;
         const head = `<span style="color:${theme.red}">${MONTHS[m]} ${years[y]}</span>`;
         if (value === null) return `${head}<br/>NO DATA FOR THIS METRIC`;
         const ratio = anomaly === null ? 'n/a' : `${anomaly.toFixed(1)}x long-term mean`;
@@ -89,14 +103,10 @@ export function Calendar({ data, mode = 'count' }: { data: CalendarResponse; mod
     series: [
       {
         type: 'heatmap',
-        data: data.cells.map((c): Datum => [
-          c.month - 1,
-          years.indexOf(c.year),
-          c.value,
-          c.anomaly,
-          c.rank,
-          colourKey(c.value, c.anomaly),
-        ]),
+        data: data.cells.map((c) => {
+          const value: Datum = [c.month - 1, years.indexOf(c.year), c.value, c.anomaly, c.rank, colourKey(c.value, c.anomaly)];
+          return inHighlight(c.year, c.month) ? { value, itemStyle: { borderColor: theme.bone, borderWidth: 2 } } : { value };
+        }),
         itemStyle: { borderColor: theme.panel, borderWidth: 2 },
         emphasis: { itemStyle: { borderColor: theme.bone, borderWidth: 1 } },
       },

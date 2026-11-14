@@ -47,6 +47,9 @@ await conn.run(`
   CREATE VIEW hotspots AS
   SELECT * FROM read_parquet(${lit(hotspotsGlob)}, hive_partitioning = true) WHERE ${countryFilter}`);
 await conn.run(`CREATE TABLE sats AS ${satellitesSql}`);
+// The API reads satellite availability from this small file instead of scanning all hotspots (slow on world data).
+await mkdir(calibDir, { recursive: true });
+await conn.run(`COPY sats TO ${lit(path.join(calibDir, 'satellites.parquet'))} (FORMAT parquet)`);
 console.log('Satellites:');
 console.table(await rows(`SELECT satellite, sensor, first_date::VARCHAR AS first, last_date::VARCHAR AS last FROM sats`));
 

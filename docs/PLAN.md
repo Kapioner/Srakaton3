@@ -128,7 +128,7 @@ Wszystkie endpointy przyjmują `bbox=minLon,minLat,maxLon,maxLat`, `from=YYYY-MM
 | `GET /api/points?limit=50000` | surowe punkty jako GeoJSON (mapa przy dużym zoomie, z limitem) |
 | `GET /api/export.csv` | **strumień** ujednoliconych hotspotów z wyszukiwania |
 
-Typy: `shared/api.ts`. Przykładowe odpowiedzi (`server/fixtures/*.json`) generuje z wyjścia ETL `npm run fixtures -w server`; serwer zwraca je, dopóki `USE_FIXTURES=1`.
+Typy: `shared/api.ts`. Przykładowe odpowiedzi (`server/fixtures/*.json`) generuje z wyjścia ETL `npm run fixtures -w server`; serwer zwraca je automatycznie, gdy w `OUTPUT_DIR` nie ma danych Parquet (`DATA_SOURCE=auto`).
 
 ---
 
@@ -166,7 +166,7 @@ Cztery ścieżki równoległe po wspólnym kroku 0:
 | 0 | Szkielet monorepo, konfiguracja, kontrakt API i fixtures | wszyscy | 1 h | `npm run dev` uruchamia server i web, mocki odpowiadają |
 | 1 | ETL: schemat, filtr, siatka, Parquet | **A (dane)** | gotowe | `npm run etl:all` w kilka sekund dla Grecji |
 | 2 | Kalibracja i walidacja (współczynniki, wykres przed i po, znane pożary) | **A** | gotowe; do sprawdzenia lata tylko z Terra | `calibration/k.parquet`, raport HTML |
-| 3 | API: endpointy na DuckDB, streaming CSV | **B (backend)** | 3–4 h | endpointy z sekcji 4 na prawdziwych danych |
+| 3 | API: endpointy na DuckDB, streaming CSV | **B (backend)** | gotowe | endpointy z sekcji 4 na Parquet, z filtrami regionu i dat |
 | 4 | Frontend: mapa, wybór regionu, kalendarz, wykresy, pobieranie | **C (frontend)** | 6–8 h | ekran z sekcji 5, najpierw na mockach |
 | 5 | Tekst z wnioskiem, anomalie i ranking | B + C | 2 h | tekst z wnioskiem na ekranie |
 | 6 | Dowód skalowania: ETL na jednym pełnym roku globalnym i pomiar czasów | A | 1–2 h | liczby na slajd (opcjonalne) |
@@ -192,9 +192,10 @@ etl/
   src/report.ts                       krok 3: raport HTML
 server/
   src/index.ts                        Fastify, CORS, kompresja, statyczne pliki web/dist
-  src/config.ts                       OUTPUT_DIR, API_PORT, USE_FIXTURES
-  src/db.ts                           instancja DuckDB
-  src/queries/*.ts                    (etap 3) calendar, summary, series, grid, points, export
+  src/config.ts                       OUTPUT_DIR, API_PORT, DATA_SOURCE, limity DuckDB
+  src/db.ts                           instancja DuckDB, limit pamięci i czasu, kolejka zapytań
+  src/dataset.ts                      wykrywanie danych, widoki na Parquet, metadane w pamięci
+  src/queries.ts                      calendar, summary, series, grid, points, export (z filtrami)
   src/params.ts                       walidacja bbox i dat
   scripts/make-fixtures.ts            fixtures z wyjścia ETL
   fixtures/*.json                     przykładowe odpowiedzi dla frontu

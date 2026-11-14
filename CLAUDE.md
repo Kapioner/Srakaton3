@@ -43,7 +43,12 @@ The full plan (MVP scope, API contract, screen layout, phases, risks) is in [doc
 
 - Dev data: `sample_data/<sensor>/<sensor>_<year>_Greece.csv`. MODIS covers 2000–2025, VIIRS S-NPP 2012–2025, VIIRS NOAA-20 2018–2025. NOAA-21 is not available in the FIRMS per-country archive. Download more with `npm run etl:download -- --country <Name>`.
 - ETL output goes to `data/parquet/` (git-ignored); the API server reads the same folder (`OUTPUT_DIR`). Both read `<repo>/.env` (see `.env.example`).
-- API contract: `shared/api.ts` (types used by server and web). `server/fixtures/` holds sample responses generated from the ETL output with `npm run fixtures -w server`; the server serves them while `USE_FIXTURES=1`.
+- API contract: `shared/api.ts` (types used by server and web). `server/fixtures/` holds sample responses generated from the ETL output with `npm run fixtures -w server`.
+- Data source (`DATA_SOURCE`, default `auto`): the server queries the Parquet dataset in `OUTPUT_DIR` when it exists, otherwise it serves the fixtures and says why (`/api/health`). World scale = the same ETL layout in another folder: set `OUTPUT_DIR`, no code change.
+- Server guard rails (so it does not crash a laptop): DuckDB memory cap (a third of RAM, 1-4 GB), thread cap, per-query timeout with interrupt (504), queue of max 3 concurrent queries, grid coarsening to `GRID_MAX_CELLS`, row caps on points and CSV export. All in `.env.example`.
+- Server code: `server/src/config.ts` (env), `db.ts` (DuckDB + limits), `dataset.ts` (source detection, views, cached metadata), `queries.ts` (all archive queries), `routes/api.ts`.
+- Frontend query flow: the query panel applies region (country / map view / all) + dates on "Apply". Map and summary follow region + dates; calendar and sensor chart always show the region's whole history with the selected period outlined.
+- The `origin/API_backend` branch (live FIRMS feed + forecast) is a separate restructured project and is NOT merged.
 - Dev loop: `npm run etl:all` once, then `npm run dev` (API on 3001, web on 5173). The frontend lives in `web/` only.
 
 ## Tech stack (decided)

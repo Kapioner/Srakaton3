@@ -51,6 +51,7 @@ const yearlyAll = await query(`
   FROM ${HZ} WHERE ${FULL} GROUP BY year ORDER BY year`);
 const both = yearlyAll.filter((r) => Number(r.hm) > 0 && Number(r.hv) > 0);
 const meta: MetaResponse = {
+  source: 'fixtures',
   dateRange: { from: Q.from, to: Q.to },
   bbox: [round(bbox.a, 4)!, round(bbox.b, 4)!, round(bbox.c, 4)!, round(bbox.d, 4)!],
   countries,

@@ -53,10 +53,14 @@ export function Sidebar({ meta, gridCells, locations, scopeCode }: Props) {
       <div className="sidebar-section">
         <div className="label dim section-label">Satellites</div>
         {meta?.satellites.map((s) => (
-          <div key={s.satellite} className="layer-item">
+          <div key={s.satellite} className="layer-item satellite">
             <span className="layer-swatch" style={{ background: dataColors.satellites[s.satellite] ?? dataColors.raw }} />
-            <span>{s.satellite}</span>
-            <span className="layer-count mono">{s.from.slice(0, 4)}</span>
+            <span className="sat-text">
+              <span>
+                {s.satellite} <span className="dim">· {s.sensor}</span>
+              </span>
+              <span className="sat-since mono">Introduced in {s.from.slice(0, 4)}</span>
+            </span>
           </div>
         ))}
       </div>

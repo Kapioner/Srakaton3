@@ -41,7 +41,7 @@ Open http://localhost:5173. The API runs on http://localhost:3001 (`/api/health`
 | `npm run typecheck` | Type-checks all three packages |
 | `npm run build` then `npm start` | Builds the frontend and serves it from the API process |
 
-Configuration: copy `.env.example` to `.env`; the ETL and the API both read it. The data scope (`DATA_COUNTRIES`, `DATA_YEARS`) is configuration, so the same code runs on one country or the whole world. ETL flags (`--countries`, `--years`, `--input`, `--output`, `--force`, `--recalibrate`) override it.
+Configuration: copy `.env.example` to `.env`; the ETL and the API both read it. The API uses the Parquet dataset in `OUTPUT_DIR` when it exists and falls back to the bundled sample responses otherwise (`DATA_SOURCE=auto`); `/api/health` says which. For the world dataset, point `OUTPUT_DIR` at its folder; memory, thread, timeout and row limits keep the server stable on a laptop. The data scope (`DATA_COUNTRIES`, `DATA_YEARS`) is configuration, so the same code runs on one country or the whole world. ETL flags (`--countries`, `--years`, `--input`, `--output`, `--force`, `--recalibrate`) override it.
 
 ## Harmonization
 

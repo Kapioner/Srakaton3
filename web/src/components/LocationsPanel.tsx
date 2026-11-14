@@ -4,10 +4,12 @@ import type { GridResponse } from '../../../shared/api.ts';
 import { activityNear, type WatchLocation } from '../features/locations.ts';
 
 interface Props {
+  open: boolean;
   locations: WatchLocation[];
   selectedId: string | null;
   addMode: boolean;
   grid: GridResponse | null;
+  onClose: () => void;
   onToggleAdd: () => void;
   onSelect: (id: string | null) => void;
   onRemove: (id: string) => void;
@@ -15,45 +17,47 @@ interface Props {
 
 const nf = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
 
-/** Right panel: the user's watch locations with fire activity around each one. */
-export function LocationsPanel({ locations, selectedId, addMode, grid, onToggleAdd, onSelect, onRemove }: Props) {
+/** Slide-out drawer over the map: the user's watch locations with fire activity around each one. */
+export function LocationsPanel({ open, locations, selectedId, addMode, grid, onClose, onToggleAdd, onSelect, onRemove }: Props) {
   const [search, setSearch] = useState('');
-  const filtered = locations.filter((l) => l.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = locations.filter((l) => l.name.toLowerCase().includes(search.trim().toLowerCase()));
   const selected = locations.find((l) => l.id === selectedId) ?? null;
   const near = selected && grid ? activityNear(selected, grid.features) : null;
 
   return (
-    <aside className="right-panel" aria-label="Watch locations">
+    <aside className={`drawer ${open ? 'open' : ''}`} aria-label="Watch locations" aria-hidden={!open} inert={!open}>
       <div className="panel-header">
         <div>
           <div className="label dim">Watch list</div>
           <h2>Locations</h2>
         </div>
-        <span className="panel-count mono">{String(locations.length).padStart(2, '0')}</span>
+        <button type="button" className="icon-button" onClick={onClose} aria-label="Hide locations">
+          <X size={17} />
+        </button>
       </div>
 
       <button type="button" className={`add-button ${addMode ? 'adding' : ''}`} onClick={onToggleAdd}>
         {addMode ? <X size={16} /> : <Plus size={16} />}
-        {addMode ? 'Cancel adding' : 'Add location'}
+        {addMode ? 'Cancel adding (Esc)' : 'Add location'}
       </button>
+      {addMode && <p className="drawer-hint">Click anywhere on the map. Fire dots are dimmed while you pick.</p>}
 
-      <label className="search-box">
-        <Search size={15} />
-        <input placeholder="Search locations" value={search} onChange={(e) => setSearch(e.target.value)} />
-      </label>
-
-      <div className="panel-list-header label">
-        <span>All locations</span>
-        <span>Newest first</span>
-      </div>
+      {locations.length > 0 && (
+        <label className="search-box">
+          <Search size={15} />
+          <input placeholder="Search locations" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </label>
+      )}
 
       <div className="points-list">
-        {filtered.length === 0 ? (
+        {locations.length === 0 ? (
           <div className="empty-state">
             <MapPin size={22} />
             <strong>No locations yet</strong>
             <p>Add a town, a park or a road you want to keep an eye on, then click its spot on the map.</p>
           </div>
+        ) : filtered.length === 0 ? (
+          <p className="drawer-hint">No location matches “{search}”.</p>
         ) : (
           [...filtered].reverse().map((l) => (
             <div

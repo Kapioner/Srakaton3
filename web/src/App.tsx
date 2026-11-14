@@ -1,10 +1,20 @@
-import { Download } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import type { CalendarResponse, GridResponse, MetaResponse, SeriesResponse, SummaryResponse } from '../../shared/api.ts';
-import { api, type HealthResponse } from './api.ts';
+import { Download, MapPin } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import type {
+  Bbox,
+  CalendarResponse,
+  GridResponse,
+  HealthResponse,
+  MetaResponse,
+  Region,
+  SeriesResponse,
+  SummaryResponse,
+} from '../../shared/api.ts';
+import { api, isAbort } from './api.ts';
 import { Calendar, type CalendarMode } from './components/Calendar.tsx';
 import { FireMap } from './components/FireMap.tsx';
 import { LocationsPanel } from './components/LocationsPanel.tsx';
+import { ALL_DATA, QueryPanel, type Query } from './components/QueryPanel.tsx';
 import { Scramble } from './components/Scramble.tsx';
 import { SeriesChart } from './components/SeriesChart.tsx';
 import { Sidebar } from './components/Sidebar.tsx';
@@ -12,36 +22,93 @@ import { loadLocations, saveLocations, type WatchLocation } from './features/loc
 import { dataColors } from './theme.ts';
 
 const nf = new Intl.NumberFormat('en-US');
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** Dashboard: sidebar | map + calendar + charts | watch locations. */
+/** One loadable view: its data, whether a request is running, and its own error (one failing view does not blank the page). */
+interface View<T> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+}
+const idle = <T,>(): View<T> => ({ data: null, loading: false, error: null });
+
+function useView<T>() {
+  const [view, setView] = useState<View<T>>(idle<T>());
+  const load = useCallback((p: Promise<T>) => {
+    setView((v) => ({ ...v, loading: true, error: null }));
+    p.then((data) => setView({ data, loading: false, error: null })).catch((e: unknown) => {
+      if (isAbort(e)) return;
+      setView((v) => ({ ...v, loading: false, error: (e as Error).message }));
+    });
+  }, []);
+  return [view, load] as const;
+}
+
+/** Dashboard: sidebar | query + map + calendar + charts | watch locations. */
 export function App() {
   const [meta, setMeta] = useState<MetaResponse | null>(null);
-  const [calendar, setCalendar] = useState<CalendarResponse | null>(null);
-  const [summary, setSummary] = useState<SummaryResponse | null>(null);
-  const [series, setSeries] = useState<SeriesResponse | null>(null);
-  const [grid, setGrid] = useState<GridResponse | null>(null);
+  const [regions, setRegions] = useState<Region[]>([]);
   const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [bootError, setBootError] = useState<string | null>(null);
+
+  const [query, setQuery] = useState<Query>(ALL_DATA);
+  const [calendar, loadCalendar] = useView<CalendarResponse>();
+  const [summary, loadSummary] = useView<SummaryResponse>();
+  const [series, loadSeries] = useView<SeriesResponse>();
+  const [grid, loadGrid] = useView<GridResponse>();
+  const [mapViewState, setMapViewState] = useState<Bbox | null>(null);
 
   const [calendarMode, setCalendarMode] = useState<CalendarMode>('count');
   const [locations, setLocations] = useState<WatchLocation[]>(loadLocations);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addMode, setAddMode] = useState(false);
+  // Locations drawer over the map: hidden by default so the map gets the full width.
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Esc leaves "add location" mode.
   useEffect(() => {
-    Promise.all([api.meta(), api.calendar({}), api.summary({}), api.series({}), api.grid({}), api.health()])
-      .then(([m, c, s, se, g, h]) => {
+    if (!addMode) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setAddMode(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [addMode]);
+
+  // Dataset facts: once.
+  useEffect(() => {
+    Promise.all([api.meta(), api.regions(), api.health()])
+      .then(([m, r, h]) => {
         setMeta(m);
-        setCalendar(c);
-        setSummary(s);
-        setSeries(se);
-        setGrid(g);
+        setRegions(r.regions);
         setHealth(h);
       })
-      .catch((e: Error) => setError(e.message));
+      .catch((e: Error) => setBootError(e.message));
   }, []);
 
+  // The calendar and the sensor chart always show the region's whole history (that is what the selected
+  // period is compared against), so they only reload when the region changes.
+  const regionKey = query.bbox?.join(',') ?? 'all';
+  useEffect(() => {
+    const ctrl = new AbortController();
+    const region = { bbox: query.bbox };
+    loadCalendar(api.calendar(region, ctrl.signal));
+    loadSeries(api.series(region, ctrl.signal));
+    return () => ctrl.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regionKey, loadCalendar, loadSeries]);
+
+  // Map and summary follow the full query (region + dates). A new query aborts the previous requests.
+  useEffect(() => {
+    const ctrl = new AbortController();
+    loadSummary(api.summary(query, ctrl.signal));
+    loadGrid(api.grid(query, ctrl.signal));
+    return () => ctrl.abort();
+  }, [query, loadSummary, loadGrid]);
+
   useEffect(() => saveLocations(locations), [locations]);
+
+  const onViewChange = useCallback((b: Bbox) => {
+    setMapViewState(b);
+  }, []);
 
   const addLocation = ({ lng, lat }: { lng: number; lat: number }) => {
     const loc: WatchLocation = {
@@ -61,30 +128,37 @@ export function App() {
     if (selectedId === id) setSelectedId(null);
   };
 
-  const [firstYear, lastYear] = calendar?.baselineYears ?? [2001, 2025];
+  // Dataset span for the headline (a leading year with only a few weeks of data does not count).
+  const firstYear = meta ? Number(meta.dateRange.from.slice(0, 4)) + (Number(meta.dateRange.from.slice(5, 7)) > 2 ? 1 : 0) : 2001;
+  const lastYear = meta ? Number(meta.dateRange.to.slice(0, 4)) : 2025;
   const span = lastYear - firstYear + 1;
-  const region = meta?.countries.join(' / ') ?? 'the region';
+  const datasetName = meta?.countries.length ? (meta.countries.length > 3 ? `${meta.countries.length} countries` : meta.countries.join(' / ')) : 'the region';
   const agreement = meta?.harmonization.sensorAgreement;
-  const scopeCode = meta ? `${meta.countries.map((c) => c.slice(0, 2).toUpperCase()).join('-')}_${firstYear}-${lastYear}` : '--';
-  const csvUrl = api.exportCsvUrl({});
+  const scopeCode = meta ? `${meta.countries.length > 3 ? 'WORLD' : meta.countries.map((c) => c.slice(0, 2).toUpperCase()).join('-')}_${firstYear}-${lastYear}` : '--';
+  const csvUrl = api.exportCsvUrl(query);
+  const busy = calendar.loading || summary.loading || series.loading || grid.loading;
+  const fixtures = (health?.source ?? meta?.source) === 'fixtures';
+  const s = summary.data;
+  const cmp = s?.comparison;
 
   return (
     <div className="page" id="top">
       <div className="frame app-shell">
-        <Sidebar meta={meta} gridCells={grid?.features.length ?? 0} locations={locations.length} scopeCode={scopeCode} />
+        <Sidebar meta={meta} gridCells={grid.data?.features.length ?? 0} locations={locations.length} scopeCode={scopeCode} />
 
         <main className="main-content">
           <header className="topbar">
             <div className="breadcrumb label">
               <span className="dim">Workspace</span>
               <span className="dim">/</span>
-              <strong>{region}</strong>
+              <strong>{query.label === ALL_DATA.label ? datasetName : query.label}</strong>
             </div>
             <div className="topbar-right">
+              {busy && <span className="status label warn">Querying</span>}
               {health && (
-                <span className={`status label ${health.fixtures ? 'warn' : 'ok'}`}>
+                <span className={`status label ${fixtures ? 'warn' : 'ok'}`} title={health.reason ?? health.parquetDir}>
                   <span className="status-dot" />
-                  {health.fixtures ? 'Sample data (fixtures)' : 'Live data'}
+                  {fixtures ? 'Sample data (fixtures)' : 'Parquet dataset'}
                 </span>
               )}
               <a className="topbar-link label" href={csvUrl}>
@@ -105,40 +179,91 @@ export function App() {
               </h1>
             </div>
             <p className="lede">
-              Active-fire detections over {region}, harmonized so the sensor no longer matters. See which months burn,
-              which years were worst, and how today compares.
+              Active-fire detections over {datasetName}, harmonized so the sensor no longer matters. Pick a region and a
+              period: see which months burn, which years were worst, and how this period compares.
             </p>
           </section>
 
-          {error && <p className="error">API error: {error}. Is the server running on port 3001?</p>}
+          {bootError && <p className="error">API error: {bootError}. Is the server running on port 3001?</p>}
+          {fixtures && health?.reason && (
+            <p className="notice">
+              Showing sample responses: region and date filters are not applied. {health.reason}.
+            </p>
+          )}
+
+          <QueryPanel meta={meta} regions={regions} query={query} mapView={mapViewState} busy={busy} onApply={setQuery} />
+
+          {cmp && s && (
+            <p className="insight" aria-live="polite">
+              <span className="label dim">Selected period</span>
+              <span>
+                <b className="mono">{nf.format(Math.round(cmp.periodValue))}</b> fire cell-days
+                {cmp.ratio !== null && cmp.outOf > 1 ? (
+                  <>
+                    {' '}
+                    · <b className={`mono ${cmp.ratio >= 1.5 ? 'hot' : cmp.ratio <= 0.67 ? 'cool' : ''}`}>{cmp.ratio.toFixed(1)}×</b> the same
+                    period in other years · rank <b className="mono">{cmp.rank}</b> of {cmp.outOf} ({cmp.baselineYears[0]}–{cmp.baselineYears[1]})
+                  </>
+                ) : (
+                  <> · choose a period of up to one year to compare it with other years</>
+                )}
+              </span>
+            </p>
+          )}
 
           <section id="map" className="block">
             <FireMap
-              grid={grid}
-              bbox={meta?.bbox ?? null}
+              grid={grid.data}
+              bbox={query.bbox ?? meta?.bbox ?? null}
+              selection={query.bbox}
+              onViewChange={onViewChange}
               locations={locations}
               selectedId={selectedId}
               addMode={addMode}
               onAdd={addLocation}
-              onSelect={setSelectedId}
-            />
+              onSelect={(id) => {
+                setSelectedId(id);
+                setDrawerOpen(true);
+              }}
+              drawerOpen={drawerOpen}
+            >
+              {!drawerOpen && (
+                <button type="button" className="drawer-toggle" onClick={() => setDrawerOpen(true)} aria-expanded={false}>
+                  <MapPin size={15} />
+                  Locations
+                </button>
+              )}
+              <LocationsPanel
+                open={drawerOpen}
+                locations={locations}
+                selectedId={selectedId}
+                addMode={addMode}
+                grid={grid.data}
+                onClose={() => {
+                  setDrawerOpen(false);
+                  setAddMode(false);
+                }}
+                onToggleAdd={() => setAddMode((v) => !v)}
+                onSelect={setSelectedId}
+                onRemove={removeLocation}
+              />
+            </FireMap>
+            {grid.error && <p className="error">Map: {grid.error}</p>}
           </section>
 
           <section className="stats" aria-label="Key numbers">
             <div className="stat">
               <span className="label dim">Peak year</span>
-              <b className="mono">{summary?.peakYear?.year ?? '----'}</b>
+              <b className="mono">{s?.peakYear?.year ?? '----'}</b>
             </div>
             <div className="stat">
               <span className="label dim">Peak month</span>
-              <b className="mono">
-                {summary?.peakMonth ? `${String(summary.peakMonth.month).padStart(2, '0')}/${summary.peakMonth.year}` : '--/----'}
-              </b>
+              <b className="mono">{s?.peakMonth ? `${MONTHS[s.peakMonth.month - 1]} ${s.peakMonth.year}` : '--- ----'}</b>
             </div>
             <div className="stat">
               <span className="label dim">Raw detections</span>
               <b className="mono" style={{ color: dataColors.raw }}>
-                {summary ? nf.format(summary.rawDetections) : '------'}
+                {s ? nf.format(s.rawDetections) : '------'}
               </b>
             </div>
             <div className="stat">
@@ -148,6 +273,7 @@ export function App() {
               </b>
             </div>
           </section>
+          {summary.error && <p className="error">Summary: {summary.error}</p>}
 
           <section id="calendar" className="block">
             <div className="section-head">
@@ -165,11 +291,15 @@ export function App() {
             </div>
             <p className="section-note">
               {calendarMode === 'count'
-                ? `${calendar?.unit ?? 'Harmonized activity'} per month, log colour scale.`
+                ? `${calendar.data?.unit ?? 'Harmonized activity'} per month in ${query.label === ALL_DATA.label ? datasetName : query.label}, log colour scale${query.from || query.to ? '; outlined: the selected period' : ''}.`
                 : 'Each month against its long-term mean: blue is quieter than normal, red and gold are worse.'}
             </p>
-            <div className="chart-box">
-              {calendar ? <Calendar data={calendar} mode={calendarMode} /> : !error && <p className="loading">Loading calendar</p>}
+            <div className={`chart-box ${calendar.loading ? 'is-loading' : ''}`}>
+              {calendar.data ? (
+                <Calendar data={calendar.data} mode={calendarMode} highlight={query.from || query.to ? { from: query.from, to: query.to } : null} />
+              ) : (
+                <p className={calendar.error ? 'error' : 'loading'}>{calendar.error ?? 'Loading calendar'}</p>
+              )}
             </div>
           </section>
 
@@ -183,7 +313,13 @@ export function App() {
               The harmonized series next to the same estimate from MODIS only and VIIRS only. Raw detections (grey bars) jump
               whenever a satellite is added; the harmonized lines do not.
             </p>
-            <div className="chart-box">{series ? <SeriesChart data={series} /> : !error && <p className="loading">Loading series</p>}</div>
+            <div className={`chart-box ${series.loading ? 'is-loading' : ''}`}>
+              {series.data ? (
+                <SeriesChart data={series.data} />
+              ) : (
+                <p className={series.error ? 'error' : 'loading'}>{series.error ?? 'Loading series'}</p>
+              )}
+            </div>
           </section>
 
           <section id="method" className="block method">
@@ -201,22 +337,20 @@ export function App() {
           </section>
 
           <footer className="footer">
-            <span className="label dim mono">{scopeCode}</span>
+            <span className="label dim mono">
+              {scopeCode}
+              {health && !fixtures && (
+                <>
+                  <br />
+                  DuckDB {health.duckdb} · {health.limits.memoryLimit} · {health.limits.threads} threads
+                </>
+              )}
+            </span>
             <a className="btn" href={csvUrl}>
               Download hotspots CSV
             </a>
           </footer>
         </main>
-
-        <LocationsPanel
-          locations={locations}
-          selectedId={selectedId}
-          addMode={addMode}
-          grid={grid}
-          onToggleAdd={() => setAddMode((v) => !v)}
-          onSelect={setSelectedId}
-          onRemove={removeLocation}
-        />
       </div>
     </div>
   );
