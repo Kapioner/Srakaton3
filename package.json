@@ -1,0 +1,12 @@
+{
+  "name": "harmonized-burning-calendar",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "etl"
+  ],
+  "scripts": {
+    "etl:download": "npm run download -w etl --",
+    "etl:normalize": "npm run normalize -w etl --"
+  }
+}

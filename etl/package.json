@@ -1,0 +1,18 @@
+{
+  "name": "@hbac/etl",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "download": "node scripts/download-firms.mjs",
+    "normalize": "tsx src/normalize.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "^2.0.0-r.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
