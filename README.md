@@ -1,44 +1,99 @@
-# Burning Activity Calendar
+# server — live (near-real-time) fire feature
 
-Harmonized burning activity calendar built from NASA FIRMS active fire hotspots (MODIS + VIIRS).
-NASA Space Apps Challenge 2026, challenge "Harmonization of MODIS and VIIRS Hot Spots".
+Fastify + DuckDB backend that keeps pulling NASA FIRMS active-fire files, harmonizes MODIS and VIIRS
+detections into one table, and serves the current situation plus a short-term movement forecast.
+It is a separate feature that sits next to the archive/calendar API: own route prefix (`/api/live`),
+own tables (`live_*`), same `Database` instance.
 
-## Quick start
-
-Requires Node.js 20.12 or newer.
+## Run
 
 ```bash
 npm install
-npm run dev
+cp .env.example .env      # optional, defaults work
+npm run dev               # http://localhost:3001
+npm test                  # runs against a local fake FIRMS server, no network needed
 ```
 
-Open http://localhost:5173. The API runs on http://localhost:3001 (`/api/health` checks DuckDB).
+## Data source
 
-## Repository layout
+Keyless FIRMS files listed on <https://firms.modaps.eosdis.nasa.gov/active_fire/>:
 
-| Path | What it is |
-|---|---|
-| `sample_data/` | Raw FIRMS CSVs for Greece, 2000-2025 (`<sensor>/<sensor>_<year>_<Country>.csv`) |
-| `etl/` | TypeScript + DuckDB pipeline: raw CSV to harmonized Parquet and calibration |
-| `server/` | Fastify API over DuckDB (`server/fixtures/` holds sample responses) |
-| `web/` | React + Vite frontend (MapLibre, ECharts) |
-| `shared/api.ts` | API contract: response types used by both server and web |
-| `shared/config.ts` | Runtime configuration read from the environment or `.env` |
-| `docs/PLAN.md` | Implementation plan and harmonization method |
+```
+{FIRMS_BASE_URL}/{sensor-dir}/csv/{PREFIX}_{Region}_{24h|48h|7d}.csv
+e.g. .../noaa-20-viirs-c2/csv/J1_VIIRS_C2_Europe_24h.csv
+```
 
-## Commands
+Sensors: MODIS (Terra+Aqua), VIIRS S-NPP, VIIRS NOAA-20, VIIRS NOAA-21. Downloads use conditional
+GETs (ETag / Last-Modified), so an unchanged file costs one 304.
 
-| Command | What it does |
-|---|---|
-| `npm run dev` | Starts the API (port 3001) and the frontend (port 5173) |
-| `npm run etl` | Runs the ETL pipeline over `DATA_DIR` |
-| `npm run download -- --country Poland` | Downloads FIRMS per-country CSVs into `sample_data/` |
-| `npm run typecheck` | Type-checks all three packages |
-| `npm run build` then `npm start` | Builds the frontend and serves it from the API process |
+## API (`/api/live`)
 
-Configuration: copy `.env.example` to `.env`. The data scope (`DATA_COUNTRIES`, `DATA_YEARS`) is configuration, so the same code runs on one country or the whole world.
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/scope/options` | Allowed regions, sensors and windows (for the frontend form) |
+| GET | `/scope` | Current ingest scope |
+| PUT | `/scope` | Set scope, then refresh in the background (202) |
+| POST | `/ingest` | Run an ingest now and return its result |
+| GET | `/status` | Running flag, scope, last run (per-sensor outcome), store stats |
+| GET | `/hotspots` | Harmonized hotspots: `bbox`, `from`, `to`, `minConfidence`, `limit`, `format=json\|csv` (CSV is streamed) |
+| GET | `/situation` | Current fires as GeoJSON polygons: `bbox`, `hours` (default 24), `limit` |
+| GET | `/forecast` | Movement forecast as GeoJSON: `bbox`, `lookbackHours` (48), `horizons` (`6,12,24`), `limit` |
 
-## Data
+`bbox` is always `west,south,east,north`.
 
-NASA FIRMS active fire archive, per-country yearly CSVs: MODIS Collection 6.1 (Terra, Aqua) and VIIRS 375 m (Suomi NPP, NOAA-20).
-https://firms.modaps.eosdis.nasa.gov/country/
+Scope body:
+
+```json
+{
+  "region": "Europe",
+  "sensors": ["MODIS", "VIIRS_SNPP", "VIIRS_NOAA20", "VIIRS_NOAA21"],
+  "window": "24h",
+  "bbox": [19, 34, 29, 42],
+  "pollIntervalMinutes": 30
+}
+```
+
+`bbox` (optional) narrows the FIRMS region file; `pollIntervalMinutes` is 5–1440.
+
+## Harmonization
+
+Done in one SQL statement for every sensor (`src/live/repository.ts`):
+
+- confidence → `low | nominal | high` (MODIS 0–100: <30, 30–80, >80; VIIRS l/n/h),
+- satellite codes → `Terra | Aqua | SNPP | NOAA20 | NOAA21`,
+- `acq_date` + `acq_time` → one UTC timestamp,
+- position → cell of a common 0.01° (~1 km) grid.
+
+Situation and forecast work on **active grid cells**, not raw points, so a fire seen by three VIIRS
+satellites is not "bigger" than one seen by MODIS only. Re-ingesting overlapping files is idempotent
+(primary key on satellite + time + position). Rows older than `LIVE_RETENTION_DAYS` are purged;
+long-term history is the archive's job.
+
+## Forecast method (`centroid-drift-v1`)
+
+1. Cluster active cells into fires (cells at most 2 cells apart belong together).
+2. Group each fire's detections into observation epochs (overpasses less than 90 min apart).
+3. Fit a weighted line through the epoch centroids → velocity; through their spread → growth rate.
+4. Project the last observed position forward; the radius widens by growth + 0.2 km/h of uncertainty.
+
+Output per fire: a `track` LineString (observed + predicted positions) and one `forecast_area`
+polygon per horizon, with `speedKmh`, `bearingDeg`, `growthKmh` and `confidence`.
+
+Limits, stated plainly: this is a trend extrapolation of satellite detections. It has no wind, fuel
+or terrain input, sees a fire only a few times a day, and apparent speed is capped at 3 km/h.
+A wind-aware model can replace it by implementing `SpreadPredictor`.
+
+## Structure
+
+```
+src/
+  index.ts, app.ts, config.ts      bootstrap, composition root
+  db/                              Database wrapper, schema
+  live/
+    domain.ts                      types, scope, grid constant
+    firms/source.ts                HotspotSource strategy + keyless FIRMS implementation
+    repository.ts                  all SQL (harmonize+insert, queries, scope, run log)
+    ingestService.ts, scheduler.ts ingest orchestration, polling loop
+    forecast/                      clustering, predictor strategy, GeoJSON service
+    routes.ts                      Fastify plugin
+```
