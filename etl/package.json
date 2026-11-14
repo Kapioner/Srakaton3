@@ -8,7 +8,9 @@
     "typecheck": "tsc --noEmit",
     "harmonize": "tsx src/harmonize.ts",
     "report": "tsx src/report.ts",
-    "download-world": "node scripts/download-firms-world.mjs"
+    "download-world": "node scripts/download-firms-world.mjs",
+    "validate": "tsx src/validate.ts",
+    "import-global": "tsx src/import-global.ts"
   },
   "dependencies": {
     "@duckdb/node-api": "^2.0.0-r.1",

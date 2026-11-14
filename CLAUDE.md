@@ -94,11 +94,24 @@ Target users: emergency managers.
 
 Evidence (Greece): one constant factor → 15 % yearly error, 2021/2023 under-estimated by 21–33 %. Stratified, fitted on 2012–2020 only → 2021/2023 predicted within 0–9 %. Final MODIS-only vs VIIRS-only agreement 2012–2025: ~6 % per year. A coarser grid (0.05–0.1°) did not help. Globally (2025) per-class k varies far less between countries than the overall ratio (2.9–6.9).
 
-Known limits: Terra's orbit drifts after ~2020 (global 2025 k ≈ 0.3–0.5 vs ~0.8 historically), so time-varying k for Terra is a possible improvement. After Aqua ends, new satellites need chained calibration (via S-NPP/NOAA-20); not implemented yet.
+Evidence (whole world, 2000–2026, 600 M detections, `npm run etl:validate --oos`): MODIS-only vs VIIRS-only yearly agreement 2.9 %; top-30 countries each within 10 % (country-year 5 %); raw jumps ×5.3 at 2012 and ×1.5 at 2018 vanish in `h` (1.02× / 0.94×, same as MODIS-only). **Out-of-sample** (k fitted on 2012–2018 only, tested 2019+): yearly 4.5 % (2019–2024 within ±4 %, 2025 +9.5 %, 2026 +17.5 %), country-year 11.6 %.
+
+Known limits: the MODIS reference itself drifts at the end of the mission (Terra's orbit since ~2020: Terra/Aqua ratio 0.49 → 0.42; Aqua left the A-Train), which explains the larger 2025–2026 out-of-sample error; a time-windowed k is the next improvement. NOAA-21 exists only in 2026 and is calibrated against the already drifting Aqua (its k differs from S-NPP/NOAA-20); calibrating it against NOAA-20 (same orbit) would be more robust. After Aqua ends, new satellites need chained calibration; not implemented yet. A satellite without calibration is excluded from `h` (it would otherwise inflate it).
+
+## Data status (local, `data/` is gitignored)
+
+- `data/<sensor>/<year>/`: per-country CSVs 2000–2025 for the whole world (~41 GB), downloaded with `etl:download-world`.
+- `data/modis/2026/`: global FIRMS "Archive Download" export for 2026 (`fire_archive_*` until Jul/Aug + `fire_nrt_*` until 2026-11-14; all 4 satellites incl. NOAA-21; no country column, NRT has no `type`), imported with `etl:import-global`.
+- `data/parquet/`: Greece dev dataset. `data/parquet_global/`: whole world 2000–2026 (hotspots ~10 GB, harmonized 728 MB, harmonized_monthly 319 MB).
+- World timings: normalize ~27 min (2000–2025), import 2026 ~7 min, harmonize ~19 min (calibration 6 min), validate --oos ~26 min. Query speed (world data): calendar year × month ~0.4 s from `harmonized_monthly` in a fresh process, Greece daily ~0.4 s, Europe map grid 0.16 s, CSV export Greece 2021–2023 ~4.7 s (streams, so the first byte is immediate).
+- Long jobs should run in the user's own terminal so progress is visible; the user makes git commits personally.
 
 ## ETL commands
 
-- `npm run etl:normalize`: raw CSV → `data/parquet/hotspots/year=/country=/` (common schema, nothing dropped, incremental).
-- `npm run etl:harmonize`: → `data/parquet/calibration/k.parquet` + `data/parquet/harmonized/year=/part_0.parquet` (0.1° cell × day: `h`, `h_modis`, `h_viirs`, `n_modis`, `n_viirs`, `country`). The calendar and map use `h`.
-- `npm run etl:report`: → `data/reports/etl-report-<scope>.html` (before/after charts, calendar, k table).
-- `npm run etl:all` runs all three. Scope flags: `--countries Greece|*`, `--years 2000-2025`, `--input`, `--output`, `--force`, `--recalibrate`.
+- `npm run etl:download-world`: FIRMS yearly "all countries" ZIPs (45 files, ~8.6 GB), one at a time with pauses/back-off, extracted to `data/<sensor>/<year>/` with a `.complete.json` marker. `--dry-run`, `--refresh`, `--from/--to`, `--sensors`.
+- `npm run etl:normalize`: raw CSV → `<out>/hotspots/year=/country=/` (common schema, nothing dropped, incremental per year × country).
+- `npm run etl:import-global`: FIRMS global `fire_archive_*` / `fire_nrt_*` CSVs → same schema; country from historical 0.1°/1° cells (0.3 % 'Unknown'), NRT `type` inferred from historical non-vegetation 0.01° cells (98 % accurate on archive rows); replaces whole years.
+- `npm run etl:harmonize`: → `<out>/calibration/k.parquet` (fitted year by year, reused unless params/countries change or `--recalibrate`) + `<out>/harmonized/year=/part_0.parquet` (0.1° cell × day: `h`, `h_modis`, `h_viirs`, `n_modis`, `n_viirs`, `country`) + `<out>/harmonized_monthly/year=/` (0.1° cell × month, adds `fire_days`). Calendar → monthly, map/daily → daily, CSV → hotspots. `--monthly-only` rebuilds just the monthly aggregate.
+- `npm run etl:validate`: data quality, harmonization quality (`--oos` adds the out-of-sample test, slow on world data) and API query speed; PASS/WARN/FAIL, saved to `data/reports/validate-<scope>.json`.
+- `npm run etl:report`: → `data/reports/etl-report-<scope>.html` (before/after charts, sensor agreement, calendar, k table). Open the generated file, not `report.template.html`.
+- `npm run etl:all` runs normalize, harmonize and report. Scope flags: `--countries Greece|*`, `--years 2000-2025`, `--input`, `--output`, `--force`, `--recalibrate`. Dev default: Greece in `data/parquet`; world: `--countries '*' --input data --output data/parquet_global`.

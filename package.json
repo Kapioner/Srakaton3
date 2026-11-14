@@ -11,6 +11,8 @@
     "etl:harmonize": "npm run harmonize -w etl --",
     "etl:report": "npm run report -w etl --",
     "etl:all": "npm run etl:normalize && npm run etl:harmonize && npm run etl:report",
-    "etl:download-world": "npm run download-world -w etl --"
+    "etl:download-world": "npm run download-world -w etl --",
+    "etl:validate": "npm run validate -w etl --",
+    "etl:import-global": "npm run import-global -w etl --"
   }
 }
