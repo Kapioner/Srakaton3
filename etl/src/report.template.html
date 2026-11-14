@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raport ETL: __SCOPE__</title>
+<style>
+  :root { --bg:#fcfcfb; --card:#ffffff; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --line:#e1e0d9; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1a1a19; --card:#232322; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781; --line:#2c2c2a; color-scheme: dark; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; }
+  h2 { font-size: 17px; font-weight: 600; margin: 40px 0 2px; }
+  .sub { color: var(--ink2); margin: 0 0 12px; font-size: 14px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 24px 0 8px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .kpi b { display: block; font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .kpi span { color: var(--muted); font-size: 13px; }
+  .chart { width: 100%; height: 320px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+  .tall { height: 560px; }
+  table { border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; background: var(--card); }
+  th, td { border: 1px solid var(--line); padding: 6px 12px; text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  .note { color: var(--muted); font-size: 13px; }
+  .wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Harmonizacja MODIS + VIIRS: __SCOPE__</h1>
+  <p class="sub">Raport z kroku 1 (normalizacja) i kroku 2 (harmonizacja). Wygenerowany z plików Parquet przez <code>npm run etl:report</code>.</p>
+  <div class="kpis" id="kpis"></div>
+
+  <h2>1. Przed: surowe wykrycia według satelity</h2>
+  <p class="sub">Każdy nowy satelita (S-NPP w 2012, NOAA-20 w 2018) podnosi liczby, choć pożarów nie przybywa.</p>
+  <div class="chart" id="c1"></div>
+
+  <h2>2. Krok 1: co odfiltrowuje kolumna type</h2>
+  <p class="sub">Do kalendarza trafiają tylko pożary roślinności (type 0). Źródła statyczne (huty, rafinerie), wulkany i offshore odpadają.</p>
+  <div class="chart" id="c2"></div>
+
+  <h2>3. Przed i po: surowe wykrycia a seria zharmonizowana</h2>
+  <p class="sub">Indeks: średnia z lat sprzed VIIRS = 100. Surowa seria rośnie skokowo, a zharmonizowana pozostaje porównywalna przez cały okres.</p>
+  <div class="chart" id="c3"></div>
+
+  <h2>4. Dowód: sensor przestaje mieć znaczenie</h2>
+  <p class="sub">Ta sama wielkość (ekwiwalent komórko-dni MODIS Aqua) policzona osobno tylko z MODIS i tylko z VIIRS. W okresie wspólnym obie linie powinny się pokrywać.</p>
+  <div class="chart" id="c4"></div>
+
+  <h2>5. Kalendarz aktywności pożarowej (seria zharmonizowana)</h2>
+  <p class="sub">Rok × miesiąc, skala logarytmiczna. Najedź na komórkę, żeby zobaczyć wartość i źródła.</p>
+  <div class="chart tall" id="c5"></div>
+
+  <h2>6. Współczynniki kalibracji k</h2>
+  <p class="sub" id="ktext"></p>
+  <div class="wrap"><table id="ktable"></table></div>
+  <p class="note" id="method"></p>
+</main>
+<script id="report-data" type="application/json">__DATA__</script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script>
+let D;
+try {
+  D = JSON.parse(document.getElementById('report-data').textContent);
+} catch {
+  document.querySelector('main').innerHTML = '<h1>To jest szablon raportu, nie raport</h1>' +
+    '<p class="sub">Uruchom <code>npm run etl:report</code> i otwórz wygenerowany plik <code>data/reports/etl-report-&lt;zakres&gt;.html</code>.</p>';
+  throw new Error('Report template opened directly - open the generated file in data/reports/ instead.');
+}
+if (!window.echarts) {
+  document.querySelector('main').insertAdjacentHTML('afterbegin', '<p class="sub"><b>Nie udało się wczytać ECharts z CDN (brak internetu?). Wykresy się nie pokażą.</b></p>');
+}
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+const C = dark
+  ? { ink: '#c3c2b7', muted: '#898781', grid: '#2c2c2a', card: '#232322', sat: { Terra: '#3987e5', Aqua: '#d95926', 'S-NPP': '#199e70', 'NOAA-20': '#c98500', 'NOAA-21': '#d55181' }, raw: '#898781', h: '#3987e5', hm: '#d95926', hv: '#199e70',
+      ramp: ['#2c2c2a', '#4a1b0c', '#712b13', '#993c1d', '#d85a30', '#f0997b', '#f5c4b3'] }
+  : { ink: '#52514e', muted: '#898781', grid: '#e1e0d9', card: '#ffffff', sat: { Terra: '#2a78d6', Aqua: '#eb6834', 'S-NPP': '#1baf7a', 'NOAA-20': '#eda100', 'NOAA-21': '#e87ba4' }, raw: '#898781', h: '#2a78d6', hm: '#eb6834', hv: '#1baf7a',
+      ramp: ['#f1efe8', '#faece7', '#f5c4b3', '#f0997b', '#d85a30', '#993c1d', '#712b13'] };
+const fmt = (v) => v == null ? 'brak' : Math.round(v).toLocaleString('pl-PL');
+const years = [...new Set(D.yearly.map((r) => r.y).concat(D.rawBySat.map((r) => r.y)))].sort((a, b) => a - b);
+const base = () => ({
+  textStyle: { color: C.ink }, animation: false,
+  grid: { left: 56, right: 20, top: 44, bottom: 32 },
+  legend: { top: 8, textStyle: { color: C.ink }, itemWidth: 12, itemHeight: 10 },
+  tooltip: { trigger: 'axis', valueFormatter: (v) => fmt(v) },
+  xAxis: { type: 'category', data: years, axisLine: { lineStyle: { color: C.grid } }, axisTick: { show: false }, axisLabel: { color: C.muted } },
+  yAxis: { type: 'value', splitLine: { lineStyle: { color: C.grid } }, axisLabel: { color: C.muted, formatter: fmt } },
+});
+const chart = (id, opt) => { const c = echarts.init(document.getElementById(id)); c.setOption(opt); addEventListener('resize', () => c.resize()); };
+const byYear = (rows, key, val = 'n') => years.map((y) => rows.filter((r) => r.y === y && (key == null || key(r))).reduce((s, r) => s + r[val], 0));
+
+// KPIs
+const totalRaw = D.rawBySat.reduce((s, r) => s + r.n, 0);
+const dropped = D.byType.filter((r) => r.t !== 0).reduce((s, r) => s + r.n, 0);
+const both = D.yearly.filter((r) => r.hm > 0 && r.hv > 0);
+const agree = both.length ? both.reduce((s, r) => s + Math.abs(Math.log(r.hv / r.hm)), 0) / both.length : null;
+document.getElementById('kpis').innerHTML = [
+  [`${years[0]}–${years[years.length - 1]}`, 'zakres lat'],
+  [fmt(totalRaw), 'surowych wykryć'],
+  [`${(100 * dropped / totalRaw).toFixed(1)}%`, 'odfiltrowane (type ≠ 0)'],
+  [agree == null ? 'brak' : `${(100 * agree).toFixed(0)}%`, `średnia różnica MODIS a VIIRS (${both.length} lat wspólnych)`],
+].map(([v, l]) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('');
+
+// 1. raw by satellite
+const sats = D.sats.map((s) => s.s);
+chart('c1', { ...base(), series: sats.map((s) => ({ name: s, type: 'bar', stack: 'a', barMaxWidth: 24, itemStyle: { color: C.sat[s], borderColor: C.card, borderWidth: 1 }, data: byYear(D.rawBySat, (r) => r.s === s) })) });
+
+// 2. type filter
+const types = [[0, 'Pożar roślinności (zostaje)', C.h], [2, 'Źródło statyczne', C.hm], [1, 'Wulkan', '#e87ba4'], [3, 'Offshore', C.raw]];
+chart('c2', { ...base(), series: types.filter(([t]) => D.byType.some((r) => r.t === t)).map(([t, name, color]) => ({ name, type: 'bar', stack: 'a', barMaxWidth: 24, itemStyle: { color, borderColor: C.card, borderWidth: 1 }, data: byYear(D.byType, (r) => r.t === t) })) });
+
+// 3. before/after index (baseline = years before VIIRS, or all years if none)
+const firstViirs = Math.min(...D.sats.filter((s) => s.sensor === 'VIIRS').map((s) => +s.first.slice(0, 4)), 9999);
+const baseYears = D.yearly.filter((r) => r.y < firstViirs && r.y > years[0]);
+const idx = (key) => { const b = (baseYears.length ? baseYears : D.yearly); const m = b.reduce((s, r) => s + r[key], 0) / b.length; return years.map((y) => { const r = D.yearly.find((x) => x.y === y); return r && m ? +(100 * r[key] / m).toFixed(1) : null; }); };
+chart('c3', { ...base(), tooltip: { trigger: 'axis', valueFormatter: (v) => v == null ? 'brak' : v.toFixed(0) },
+  series: [
+    { name: 'Surowe wykrycia (type 0)', type: 'line', symbol: 'none', lineStyle: { width: 2, color: C.raw, type: 'dashed' }, itemStyle: { color: C.raw }, data: idx('raw') },
+    { name: 'Seria zharmonizowana', type: 'line', symbol: 'none', lineStyle: { width: 2.5, color: C.h }, itemStyle: { color: C.h }, data: idx('h') },
+  ],
+  yAxis: { ...base().yAxis, axisLabel: { color: C.muted } } });
+
+// 4. sensor agreement
+const line = (name, key, color, dash) => ({ name, type: 'line', symbol: 'circle', symbolSize: 5, connectNulls: false, lineStyle: { width: 2, color, type: dash || 'solid' }, itemStyle: { color }, data: years.map((y) => { const r = D.yearly.find((x) => x.y === y); return r ? r[key] : null; }) });
+chart('c4', { ...base(), series: [line('Tylko MODIS (Terra + Aqua)', 'hm', C.hm), line('Tylko VIIRS (S-NPP + NOAA)', 'hv', C.hv, 'dashed'), line('Połączona (finalna)', 'h', C.h, 'dotted')] });
+
+// 5. calendar heatmap
+const months = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
+// every month from the first to the last month with data; months without fires are 0, not "no data"
+const firstSat = D.sats.reduce((a, s) => (s.first < a ? s.first : a), '9999');
+const lastSat = D.sats.reduce((a, s) => (s.last > a ? s.last : a), '0000');
+const mIdx = (s) => +s.slice(0, 4) * 12 + +s.slice(5, 7) - 1;
+const cal = [];
+for (let i = mIdx(firstSat); i <= mIdx(lastSat); i++) {
+  const y = Math.floor(i / 12), m = i % 12, r = D.monthly.find((x) => x.y === y && x.m === m + 1);
+  const h = r ? r.h : 0;
+  cal.push([m, String(y), h, r ? r.hm : 0, r ? r.hv : 0, Math.log10(1 + h)]);
+}
+const maxLog = Math.max(1, ...cal.map((c) => c[5]));
+chart('c5', {
+  textStyle: { color: C.ink }, animation: false,
+  grid: { left: 56, right: 20, top: 16, bottom: 72 },
+  tooltip: { formatter: (p) => `${months[p.value[0]]} ${p.value[1]}<br>zharmonizowane: <b>${fmt(p.value[2])}</b><br>tylko MODIS: ${fmt(p.value[3])}<br>tylko VIIRS: ${fmt(p.value[4])}` },
+  xAxis: { type: 'category', data: months, position: 'top', axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: C.muted } },
+  yAxis: { type: 'category', data: years.map(String), inverse: true, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: C.muted } },
+  visualMap: { type: 'continuous', dimension: 5, min: 0, max: maxLog, inRange: { color: C.ramp }, orient: 'horizontal', left: 'center', bottom: 4,
+    calculable: true, itemHeight: 240, textStyle: { color: C.ink }, formatter: (v) => fmt(10 ** v - 1) },
+  series: [{ type: 'heatmap', data: cal, itemStyle: { borderColor: C.card, borderWidth: 2, borderRadius: 3 }, emphasis: { itemStyle: { borderColor: C.ink, borderWidth: 1 } } }],
+});
+
+// 6. calibration table
+const P = D.params, edgesTxt = [`< ${P.frpEdges[0]}`].concat(P.frpEdges.map((e, i) => P.frpEdges[i + 1] ? `${e}–${P.frpEdges[i + 1]}` : `≥ ${e}`));
+const ksats = [...new Set(D.k.map((r) => r.s))];
+document.getElementById('ktext').textContent = `Ile komórko-dni widzi dany satelita na jeden komórko-dzień satelity ${P.reference}, w podziale na klasy mocy pożaru (suma FRP w komórce ${P.fineGridDeg}°, MW). Małe pożary widzi praktycznie tylko VIIRS, dlatego k jest tam duże.`;
+document.getElementById('ktable').innerHTML = `<tr><th>Satelita</th>${edgesTxt.map((e) => `<th>${e} MW</th>`).join('')}</tr>` +
+  ksats.map((s) => `<tr><td>${s}</td>${edgesTxt.map((_, c) => { const r = D.k.find((x) => x.s === s && x.c === c); return `<td>${r && r.k != null ? r.k.toFixed(2) : '–'}</td>`; }).join('')}</tr>`).join('');
+document.getElementById('method').textContent = `Metoda: komórko-dni na siatce ${P.fineGridDeg}° (zamiast pikseli), kalibracja każdego satelity do ${P.reference} osobno dla każdej klasy FRP i każdego kraju (z przyciąganiem do wartości globalnej, α = ${P.shrinkAlpha}), łączenie satelitów estymatorem największej wiarygodności: h = Σ n / Σ k po satelitach aktywnych danego dnia. Agregat zapisany na siatce ${P.outGridDeg}° × dzień.`;
+</script>
+</body>
+</html>
