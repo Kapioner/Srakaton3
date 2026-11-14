@@ -1,52 +1,98 @@
 import ReactECharts from 'echarts-for-react';
 import type { CalendarResponse } from '../../../shared/api.ts';
+import { theme, tooltipStyle } from '../theme.ts';
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-type Datum = [month: number, yearIndex: number, value: number | null, anomaly: number | null, rank: number | null];
+type Datum = [
+  month: number,
+  yearIndex: number,
+  value: number | null,
+  anomaly: number | null,
+  rank: number | null,
+  logValue: number | null,
+];
+
+// Colour on log10(1 + value): one record month would otherwise turn every other cell black.
+const toLog = (v: number) => Math.log10(1 + v);
+const fromLog = (l: number) => 10 ** l - 1;
+
+const axisLabel = { color: theme.redDim, fontFamily: theme.fontMono, fontSize: 13 };
 
 /** Year x month heatmap of harmonized fire activity. */
 export function Calendar({ data }: { data: CalendarResponse }) {
   const years = [...new Set(data.cells.map((c) => c.year))].sort((a, b) => a - b);
-  const max = Math.max(1, ...data.cells.map((c) => c.value ?? 0));
+  const maxLog = Math.max(1, ...data.cells.map((c) => toLog(c.value ?? 0)));
 
   const option = {
     backgroundColor: 'transparent',
+    textStyle: { fontFamily: theme.fontSans },
     tooltip: {
+      ...tooltipStyle,
       formatter: (p: { data: Datum }) => {
         const [m, y, value, anomaly, rank] = p.data;
-        if (value === null) return `<b>${MONTHS[m]} ${years[y]}</b><br/>no data for this metric`;
-        const ratio = anomaly === null ? 'n/a' : `${anomaly.toFixed(1)}x the long-term mean`;
-        const place = rank === null ? '' : `<br/>rank ${rank} of ${years.length} for ${MONTHS[m]}`;
-        return `<b>${MONTHS[m]} ${years[y]}</b><br/>${value.toFixed(0)} ${data.unit}<br/>${ratio}${place}`;
+        const head = `<span style="color:${theme.red}">${MONTHS[m]} ${years[y]}</span>`;
+        if (value === null) return `${head}<br/>NO DATA FOR THIS METRIC`;
+        const ratio = anomaly === null ? 'n/a' : `${anomaly.toFixed(1)}x long-term mean`;
+        const place = rank === null ? '' : `<br/>rank ${rank}/${years.length} for ${MONTHS[m]}`;
+        return `${head}<br/>${value.toFixed(0)} ${data.unit}<br/>${ratio}${place}`;
       },
     },
-    toolbox: { feature: { saveAsImage: { title: 'Save PNG', name: 'burning-calendar', backgroundColor: '#171c22' } } },
-    grid: { left: 48, right: 16, top: 36, bottom: 64 },
-    xAxis: { type: 'category', data: MONTHS, splitArea: { show: true }, axisLabel: { color: '#8b96a5' } },
-    yAxis: { type: 'category', data: years, inverse: true, axisLabel: { color: '#8b96a5' } },
+    toolbox: {
+      right: 4,
+      top: 0,
+      iconStyle: { borderColor: theme.redDim },
+      emphasis: { iconStyle: { borderColor: theme.red } },
+      feature: { saveAsImage: { title: 'PNG', name: 'burning-calendar', backgroundColor: theme.panel, pixelRatio: 2 } },
+    },
+    grid: { left: 60, right: 12, top: 38, bottom: 74 },
+    xAxis: {
+      type: 'category',
+      data: MONTHS,
+      position: 'top',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel,
+    },
+    yAxis: {
+      type: 'category',
+      data: years,
+      inverse: true,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel,
+    },
     visualMap: {
-      // Colour by `value`; without this ECharts uses the last data dimension (rank).
-      dimension: 2,
+      dimension: 5,
       min: 0,
-      max,
+      max: maxLog,
       calculable: true,
       orient: 'horizontal',
       left: 'center',
-      bottom: 8,
-      textStyle: { color: '#8b96a5' },
-      // YlOrRd: sequential and colorblind-safe.
-      inRange: { color: ['#ffffcc', '#ffeda0', '#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#e31a1c', '#b10026'] },
+      bottom: 10,
+      itemWidth: 12,
+      itemHeight: 260,
+      textStyle: { color: theme.redDim, fontFamily: theme.fontMono, fontSize: 13 },
+      handleStyle: { color: theme.red, borderColor: theme.panel },
+      formatter: (v: number) => Math.round(fromLog(v)).toString(),
+      inRange: { color: theme.ramp },
     },
     series: [
       {
         type: 'heatmap',
-        data: data.cells.map((c): Datum => [c.month - 1, years.indexOf(c.year), c.value, c.anomaly, c.rank]),
-        itemStyle: { borderColor: '#171c22', borderWidth: 1 },
-        emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 1 } },
+        data: data.cells.map((c): Datum => [
+          c.month - 1,
+          years.indexOf(c.year),
+          c.value,
+          c.anomaly,
+          c.rank,
+          c.value === null ? null : toLog(c.value),
+        ]),
+        itemStyle: { borderColor: theme.panel, borderWidth: 2 },
+        emphasis: { itemStyle: { borderColor: theme.bone, borderWidth: 1 } },
       },
     ],
   };
 
-  return <ReactECharts option={option} style={{ height: Math.max(360, years.length * 22 + 110) }} notMerge />;
+  return <ReactECharts option={option} style={{ height: Math.max(380, years.length * 24 + 120) }} notMerge />;
 }

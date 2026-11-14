@@ -3,60 +3,102 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f91133">
 <title>Raport ETL: __SCOPE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#fcfcfb; --card:#ffffff; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --line:#e1e0d9; color-scheme: light; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#1a1a19; --card:#232322; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781; --line:#2c2c2a; color-scheme: dark; } }
+  /* House style shared with web/ (see web/src/index.css): one signal red on near-black. */
+  :root {
+    --red: #f91133; --red-dim: #ff5c70; --red-faint: rgba(249, 17, 51, 0.18);
+    --panel: #100e0f; --bone: #efe9ea;
+    --sans: 'Space Grotesk', system-ui, sans-serif; --mono: 'Space Mono', ui-monospace, monospace;
+    color-scheme: dark;
+  }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
-  h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; }
-  h2 { font-size: 17px; font-weight: 600; margin: 40px 0 2px; }
-  .sub { color: var(--ink2); margin: 0 0 12px; font-size: 14px; }
-  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 24px 0 8px; }
-  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
-  .kpi b { display: block; font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .kpi span { color: var(--muted); font-size: 13px; }
-  .chart { width: 100%; height: 320px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
-  .tall { height: 560px; }
-  table { border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; background: var(--card); }
-  th, td { border: 1px solid var(--line); padding: 6px 12px; text-align: right; }
+  body { margin: 0; background: var(--red); color: var(--red); font: 15px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--red); color: var(--panel); }
+  .page { padding: clamp(10px, 4vw, 56px); }
+  main { position: relative; max-width: 1120px; margin: 0 auto; background: var(--panel); border-radius: clamp(12px, 2vw, 22px); padding: 28px clamp(16px, 4vw, 44px) 32px; overflow: hidden; }
+  main::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px), radial-gradient(ellipse at 50% 30%, transparent 55%, rgba(0,0,0,.5)); }
+  main > * { position: relative; }
+  .label { font-size: 12.5px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
+  .mono, code { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  code { font-size: .9em; color: var(--bone); }
+  .top { display: grid; grid-template-columns: 1.15fr .85fr .9fr; gap: 24px; }
+  .brand::after { content: '_'; animation: blink 1.1s steps(1) infinite; }
+  .rule { display: grid; grid-template-columns: 1.15fr .24fr .24fr .37fr .9fr; gap: 18px; margin: 32px 0 26px; }
+  .rule span { height: 1px; background: var(--red); opacity: .75; }
+  .rule span:last-child { background: repeating-linear-gradient(90deg, var(--red) 0 44px, transparent 44px 58px); }
+  h1 { font-size: clamp(32px, 5.4vw, 64px); font-weight: 500; line-height: .98; margin: 0 0 18px; text-transform: uppercase; letter-spacing: -.01em; }
+  h2 { font-size: 15px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; margin: 44px 0 4px; }
+  h2 .idx { font-family: var(--mono); color: var(--red-dim); margin-right: 10px; }
+  .sub { color: var(--red-dim); margin: 0 0 14px; font-size: 16px; max-width: 78ch; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); border-top: 1px solid var(--red-faint); border-bottom: 1px solid var(--red-faint); margin: 28px 0 8px; }
+  .kpi { padding: 14px 16px 14px 0; }
+  .kpi + .kpi { padding-left: 16px; border-left: 1px solid var(--red-faint); }
+  .kpi b { display: block; font-family: var(--mono); font-size: clamp(20px, 2.4vw, 28px); font-weight: 400; line-height: 1.1; margin-bottom: 6px; }
+  .kpi span { font-size: 12.5px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--red-dim); }
+  .chart { width: 100%; height: 320px; border: 1px solid var(--red-faint); background: linear-gradient(180deg, rgba(249,17,51,.025), transparent 40%); }
+  .tall { height: 600px; }
+  table { border-collapse: collapse; font: 14px/1.4 var(--mono); font-variant-numeric: tabular-nums; }
+  th, td { border: 1px solid var(--red-faint); padding: 6px 12px; text-align: right; }
+  th { font: 500 12.5px/1.4 var(--sans); letter-spacing: .04em; text-transform: uppercase; color: var(--red-dim); }
   th:first-child, td:first-child { text-align: left; }
-  .note { color: var(--muted); font-size: 13px; }
+  td { color: var(--bone); }
+  td:first-child { color: var(--red); }
+  .note { color: var(--red-dim); font-size: 14px; max-width: 90ch; }
   .wrap { overflow-x: auto; }
+  .foot { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--red-faint); }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .brand::after { animation: none; } }
+  @media (max-width: 700px) { .top { grid-template-columns: 1fr 1fr; } .top > :first-child { grid-column: 1 / -1; } .rule { grid-template-columns: 2fr 1fr 1fr; } .rule span:nth-child(n+4) { display: none; } }
 </style>
 </head>
 <body>
+<div class="page">
 <main>
-  <h1>Harmonizacja MODIS + VIIRS: __SCOPE__</h1>
+  <header class="top label">
+    <span class="brand">Firecal</span>
+    <span>Raport ETL<br>Harmonizacja MODIS + VIIRS</span>
+    <span class="mono">__SCOPE__</span>
+  </header>
+  <div class="rule" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+
+  <h1>Harmonizacja<br>MODIS + VIIRS:<br>__SCOPE__</h1>
   <p class="sub">Raport z kroku 1 (normalizacja) i kroku 2 (harmonizacja). Wygenerowany z plików Parquet przez <code>npm run etl:report</code>.</p>
   <div class="kpis" id="kpis"></div>
 
-  <h2>1. Przed: surowe wykrycia według satelity</h2>
+  <h2><span class="idx">01</span>Przed: surowe wykrycia według satelity</h2>
   <p class="sub">Każdy nowy satelita (S-NPP w 2012, NOAA-20 w 2018) podnosi liczby, choć pożarów nie przybywa.</p>
   <div class="chart" id="c1"></div>
 
-  <h2>2. Krok 1: co odfiltrowuje kolumna type</h2>
+  <h2><span class="idx">02</span>Krok 1: co odfiltrowuje kolumna type</h2>
   <p class="sub">Do kalendarza trafiają tylko pożary roślinności (type 0). Źródła statyczne (huty, rafinerie), wulkany i offshore odpadają.</p>
   <div class="chart" id="c2"></div>
 
-  <h2>3. Przed i po: surowe wykrycia a seria zharmonizowana</h2>
+  <h2><span class="idx">03</span>Przed i po: surowe wykrycia a seria zharmonizowana</h2>
   <p class="sub">Indeks: średnia z lat sprzed VIIRS = 100. Surowa seria rośnie skokowo, a zharmonizowana pozostaje porównywalna przez cały okres.</p>
   <div class="chart" id="c3"></div>
 
-  <h2>4. Dowód: sensor przestaje mieć znaczenie</h2>
+  <h2><span class="idx">04</span>Dowód: sensor przestaje mieć znaczenie</h2>
   <p class="sub">Ta sama wielkość (ekwiwalent komórko-dni MODIS Aqua) policzona osobno tylko z MODIS i tylko z VIIRS. W okresie wspólnym obie linie powinny się pokrywać.</p>
   <div class="chart" id="c4"></div>
 
-  <h2>5. Kalendarz aktywności pożarowej (seria zharmonizowana)</h2>
+  <h2><span class="idx">05</span>Kalendarz aktywności pożarowej (seria zharmonizowana)</h2>
   <p class="sub">Rok × miesiąc, skala logarytmiczna. Najedź na komórkę, żeby zobaczyć wartość i źródła.</p>
   <div class="chart tall" id="c5"></div>
 
-  <h2>6. Współczynniki kalibracji k</h2>
+  <h2><span class="idx">06</span>Współczynniki kalibracji k</h2>
   <p class="sub" id="ktext"></p>
   <div class="wrap"><table id="ktable"></table></div>
   <p class="note" id="method"></p>
+
+  <footer class="foot label mono"><span>__SCOPE__</span><span id="stamp"></span></footer>
 </main>
+</div>
 <script id="report-data" type="application/json">__DATA__</script>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <script>
@@ -71,23 +113,27 @@ try {
 if (!window.echarts) {
   document.querySelector('main').insertAdjacentHTML('afterbegin', '<p class="sub"><b>Nie udało się wczytać ECharts z CDN (brak internetu?). Wykresy się nie pokażą.</b></p>');
 }
-const dark = matchMedia('(prefers-color-scheme: dark)').matches;
-const C = dark
-  ? { ink: '#c3c2b7', muted: '#898781', grid: '#2c2c2a', card: '#232322', sat: { Terra: '#3987e5', Aqua: '#d95926', 'S-NPP': '#199e70', 'NOAA-20': '#c98500', 'NOAA-21': '#d55181' }, raw: '#898781', h: '#3987e5', hm: '#d95926', hv: '#199e70',
-      ramp: ['#2c2c2a', '#4a1b0c', '#712b13', '#993c1d', '#d85a30', '#f0997b', '#f5c4b3'] }
-  : { ink: '#52514e', muted: '#898781', grid: '#e1e0d9', card: '#ffffff', sat: { Terra: '#2a78d6', Aqua: '#eb6834', 'S-NPP': '#1baf7a', 'NOAA-20': '#eda100', 'NOAA-21': '#e87ba4' }, raw: '#898781', h: '#2a78d6', hm: '#eb6834', hv: '#1baf7a',
-      ramp: ['#f1efe8', '#faece7', '#f5c4b3', '#f0997b', '#d85a30', '#993c1d', '#712b13'] };
+// House style (same tokens as web/src/theme.ts): signal red, bone white and greys on near-black.
+const MONO = "'Space Mono', ui-monospace, monospace", SANS = "'Space Grotesk', system-ui, sans-serif";
+const C = { ink: '#ff5c70', muted: '#ff5c70', grid: 'rgba(249,17,51,0.14)', card: '#100e0f', bone: '#efe9ea', red: '#f91133',
+  sat: { Terra: '#f91133', Aqua: '#8f0b20', 'S-NPP': '#ff8a99', 'NOAA-20': '#efe9ea', 'NOAA-21': '#6b5d60' },
+  raw: '#7a6e70', h: '#f91133', hm: '#efe9ea', hv: '#ff8a99',
+  // single-hue ramp, lightness rises monotonically (colour-blind and greyscale safe)
+  ramp: ['#1d1718', '#3d0c14', '#6e0d1d', '#a80f28', '#f91133', '#ff6b7d', '#ffc4cc'] };
+const TIP = { backgroundColor: C.card, borderColor: C.red, borderWidth: 1, textStyle: { color: C.bone, fontFamily: MONO, fontSize: 13 }, extraCssText: 'border-radius:0;box-shadow:none;' };
+const AXL = { color: C.muted, fontFamily: MONO, fontSize: 13 };
 const fmt = (v) => v == null ? 'brak' : Math.round(v).toLocaleString('pl-PL');
 const years = [...new Set(D.yearly.map((r) => r.y).concat(D.rawBySat.map((r) => r.y)))].sort((a, b) => a - b);
 const base = () => ({
-  textStyle: { color: C.ink }, animation: false,
-  grid: { left: 56, right: 20, top: 44, bottom: 32 },
-  legend: { top: 8, textStyle: { color: C.ink }, itemWidth: 12, itemHeight: 10 },
-  tooltip: { trigger: 'axis', valueFormatter: (v) => fmt(v) },
-  xAxis: { type: 'category', data: years, axisLine: { lineStyle: { color: C.grid } }, axisTick: { show: false }, axisLabel: { color: C.muted } },
-  yAxis: { type: 'value', splitLine: { lineStyle: { color: C.grid } }, axisLabel: { color: C.muted, formatter: fmt } },
+  textStyle: { color: C.ink, fontFamily: SANS }, animation: false,
+  grid: { left: 76, right: 20, top: 56, bottom: 36 },
+  legend: { top: 12, itemGap: 28, textStyle: { color: C.ink, fontFamily: SANS, fontSize: 14 }, itemWidth: 14, itemHeight: 10, icon: 'rect' },
+  tooltip: { trigger: 'axis', valueFormatter: (v) => fmt(v), ...TIP, axisPointer: { lineStyle: { color: C.red } } },
+  xAxis: { type: 'category', data: years, axisLine: { lineStyle: { color: C.grid } }, axisTick: { show: false }, axisLabel: AXL },
+  yAxis: { type: 'value', splitLine: { lineStyle: { color: C.grid } }, axisLabel: { ...AXL, formatter: fmt } },
 });
 const chart = (id, opt) => { const c = echarts.init(document.getElementById(id)); c.setOption(opt); addEventListener('resize', () => c.resize()); };
+document.getElementById('stamp').textContent = 'Wygenerowano ' + new Date(document.lastModified).toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
 const byYear = (rows, key, val = 'n') => years.map((y) => rows.filter((r) => r.y === y && (key == null || key(r))).reduce((s, r) => s + r[val], 0));
 
 // KPIs
@@ -107,26 +153,26 @@ const sats = D.sats.map((s) => s.s);
 chart('c1', { ...base(), series: sats.map((s) => ({ name: s, type: 'bar', stack: 'a', barMaxWidth: 24, itemStyle: { color: C.sat[s], borderColor: C.card, borderWidth: 1 }, data: byYear(D.rawBySat, (r) => r.s === s) })) });
 
 // 2. type filter
-const types = [[0, 'Pożar roślinności (zostaje)', C.h], [2, 'Źródło statyczne', C.hm], [1, 'Wulkan', '#e87ba4'], [3, 'Offshore', C.raw]];
+const types = [[0, 'Pożar roślinności (zostaje)', C.h], [2, 'Źródło statyczne', C.bone], [1, 'Wulkan', C.hv], [3, 'Offshore', C.raw]];
 chart('c2', { ...base(), series: types.filter(([t]) => D.byType.some((r) => r.t === t)).map(([t, name, color]) => ({ name, type: 'bar', stack: 'a', barMaxWidth: 24, itemStyle: { color, borderColor: C.card, borderWidth: 1 }, data: byYear(D.byType, (r) => r.t === t) })) });
 
 // 3. before/after index (baseline = years before VIIRS, or all years if none)
 const firstViirs = Math.min(...D.sats.filter((s) => s.sensor === 'VIIRS').map((s) => +s.first.slice(0, 4)), 9999);
 const baseYears = D.yearly.filter((r) => r.y < firstViirs && r.y > years[0]);
 const idx = (key) => { const b = (baseYears.length ? baseYears : D.yearly); const m = b.reduce((s, r) => s + r[key], 0) / b.length; return years.map((y) => { const r = D.yearly.find((x) => x.y === y); return r && m ? +(100 * r[key] / m).toFixed(1) : null; }); };
-chart('c3', { ...base(), tooltip: { trigger: 'axis', valueFormatter: (v) => v == null ? 'brak' : v.toFixed(0) },
+chart('c3', { ...base(), tooltip: { ...base().tooltip, valueFormatter: (v) => v == null ? 'brak' : v.toFixed(0) },
   series: [
     { name: 'Surowe wykrycia (type 0)', type: 'line', symbol: 'none', lineStyle: { width: 2, color: C.raw, type: 'dashed' }, itemStyle: { color: C.raw }, data: idx('raw') },
     { name: 'Seria zharmonizowana', type: 'line', symbol: 'none', lineStyle: { width: 2.5, color: C.h }, itemStyle: { color: C.h }, data: idx('h') },
   ],
-  yAxis: { ...base().yAxis, axisLabel: { color: C.muted } } });
+  yAxis: { ...base().yAxis, axisLabel: AXL } });
 
 // 4. sensor agreement
 const line = (name, key, color, dash) => ({ name, type: 'line', symbol: 'circle', symbolSize: 5, connectNulls: false, lineStyle: { width: 2, color, type: dash || 'solid' }, itemStyle: { color }, data: years.map((y) => { const r = D.yearly.find((x) => x.y === y); return r ? r[key] : null; }) });
 chart('c4', { ...base(), series: [line('Tylko MODIS (Terra + Aqua)', 'hm', C.hm), line('Tylko VIIRS (S-NPP + NOAA)', 'hv', C.hv, 'dashed'), line('Połączona (finalna)', 'h', C.h, 'dotted')] });
 
 // 5. calendar heatmap
-const months = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
+const months = ['STY', 'LUT', 'MAR', 'KWI', 'MAJ', 'CZE', 'LIP', 'SIE', 'WRZ', 'PAŹ', 'LIS', 'GRU'];
 // every month from the first to the last month with data; months without fires are 0, not "no data"
 const firstSat = D.sats.reduce((a, s) => (s.first < a ? s.first : a), '9999');
 const lastSat = D.sats.reduce((a, s) => (s.last > a ? s.last : a), '0000');
@@ -139,14 +185,14 @@ for (let i = mIdx(firstSat); i <= mIdx(lastSat); i++) {
 }
 const maxLog = Math.max(1, ...cal.map((c) => c[5]));
 chart('c5', {
-  textStyle: { color: C.ink }, animation: false,
-  grid: { left: 56, right: 20, top: 16, bottom: 72 },
-  tooltip: { formatter: (p) => `${months[p.value[0]]} ${p.value[1]}<br>zharmonizowane: <b>${fmt(p.value[2])}</b><br>tylko MODIS: ${fmt(p.value[3])}<br>tylko VIIRS: ${fmt(p.value[4])}` },
-  xAxis: { type: 'category', data: months, position: 'top', axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: C.muted } },
-  yAxis: { type: 'category', data: years.map(String), inverse: true, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: C.muted } },
+  textStyle: { color: C.ink, fontFamily: SANS }, animation: false,
+  grid: { left: 76, right: 20, top: 34, bottom: 76 },
+  tooltip: { ...TIP, formatter: (p) => `${months[p.value[0]]} ${p.value[1]}<br>zharmonizowane: <b>${fmt(p.value[2])}</b><br>tylko MODIS: ${fmt(p.value[3])}<br>tylko VIIRS: ${fmt(p.value[4])}` },
+  xAxis: { type: 'category', data: months, position: 'top', axisLine: { show: false }, axisTick: { show: false }, axisLabel: AXL },
+  yAxis: { type: 'category', data: years.map(String), inverse: true, axisLine: { show: false }, axisTick: { show: false }, axisLabel: AXL },
   visualMap: { type: 'continuous', dimension: 5, min: 0, max: maxLog, inRange: { color: C.ramp }, orient: 'horizontal', left: 'center', bottom: 4,
-    calculable: true, itemHeight: 240, textStyle: { color: C.ink }, formatter: (v) => fmt(10 ** v - 1) },
-  series: [{ type: 'heatmap', data: cal, itemStyle: { borderColor: C.card, borderWidth: 2, borderRadius: 3 }, emphasis: { itemStyle: { borderColor: C.ink, borderWidth: 1 } } }],
+    calculable: true, itemWidth: 12, itemHeight: 260, textStyle: { color: C.ink, fontFamily: MONO, fontSize: 13 }, handleStyle: { color: C.red, borderColor: C.card }, formatter: (v) => fmt(10 ** v - 1) },
+  series: [{ type: 'heatmap', data: cal, itemStyle: { borderColor: C.card, borderWidth: 2 }, emphasis: { itemStyle: { borderColor: C.bone, borderWidth: 1 } } }],
 });
 
 // 6. calibration table
