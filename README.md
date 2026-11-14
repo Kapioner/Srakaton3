@@ -38,7 +38,7 @@ Open http://localhost:5173. The API runs on http://localhost:3001 (`/api/health`
 
 Configuration: copy `.env.example` to `.env`. The data scope (`DATA_COUNTRIES`, `DATA_YEARS`) is configuration, so the same code runs on one country or the whole world.
 
-## Data
+## Data.
 
 NASA FIRMS active fire archive, per-country yearly CSVs: MODIS Collection 6.1 (Terra, Aqua) and VIIRS 375 m (Suomi NPP, NOAA-20).
 https://firms.modaps.eosdis.nasa.gov/country/
