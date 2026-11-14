@@ -76,37 +76,56 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [addMode]);
 
-  // Dataset facts: once.
+  // Dataset facts: once. `npm run dev` starts Vite (~0.5 s) before the API (~4 s), so wait until the API
+  // answers instead of showing a connection error on the first load; nothing else loads before that.
+  const [apiReady, setApiReady] = useState(false);
   useEffect(() => {
-    Promise.all([api.meta(), api.regions(), api.health()])
-      .then(([m, r, h]) => {
-        setMeta(m);
-        setRegions(r.regions);
-        setHealth(h);
-      })
-      .catch((e: Error) => setBootError(e.message));
+    let cancelled = false;
+    (async () => {
+      for (let attempt = 1; ; attempt++) {
+        try {
+          const [m, r, h] = await Promise.all([api.meta(), api.regions(), api.health()]);
+          if (cancelled) return;
+          setMeta(m);
+          setRegions(r.regions);
+          setHealth(h);
+          setBootError(null);
+          setApiReady(true);
+          return;
+        } catch (e) {
+          if (cancelled) return;
+          if (attempt >= 60) return setBootError((e as Error).message);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // The calendar and the sensor chart always show the region's whole history (that is what the selected
   // period is compared against), so they only reload when the region changes.
-  const regionKey = query.bbox?.join(',') ?? 'all';
+  const regionKey = `${query.bbox?.join(',') ?? 'all'}|${query.country ?? ''}`;
   useEffect(() => {
+    if (!apiReady) return;
     const ctrl = new AbortController();
-    const region = { bbox: query.bbox };
+    const region = { bbox: query.bbox, country: query.country };
     loadCalendar(api.calendar(region, ctrl.signal));
     loadSeries(api.series(region, ctrl.signal));
     loadReport(api.report(region, ctrl.signal));
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [regionKey, loadCalendar, loadSeries, loadReport]);
+  }, [apiReady, regionKey, loadCalendar, loadSeries, loadReport]);
 
   // Map and summary follow the full query (region + dates). A new query aborts the previous requests.
   useEffect(() => {
+    if (!apiReady) return;
     const ctrl = new AbortController();
     loadSummary(api.summary(query, ctrl.signal));
     loadGrid(api.grid(query, ctrl.signal));
     return () => ctrl.abort();
-  }, [query, loadSummary, loadGrid]);
+  }, [apiReady, query, loadSummary, loadGrid]);
 
   useEffect(() => saveLocations(locations), [locations]);
 
@@ -218,7 +237,7 @@ export function App() {
           <section id="map" className="block">
             <FireMap
               grid={grid.data}
-              bbox={query.bbox ?? meta?.bbox ?? null}
+              bbox={query.fit ?? query.bbox ?? meta?.bbox ?? null}
               selection={query.bbox}
               onViewChange={onViewChange}
               locations={locations}

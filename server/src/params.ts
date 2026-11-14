@@ -8,6 +8,16 @@ export interface CommonParams {
   bbox: Bbox | null;
   from: string | null;
   to: string | null;
+  /** FIRMS country name (spaces or underscores); filters by the data's country attribute, not a rectangle. */
+  country?: string | null;
+}
+
+/** Country names as stored by the ETL (FIRMS file names: underscores instead of spaces). */
+function parseCountry(value: unknown): string | null {
+  if (value === undefined || value === '') return null;
+  const name = String(value).trim().replace(/\s+/g, '_');
+  if (!/^[\p{L}\p{N}_.,'()-]{1,80}$/u.test(name)) throw new BadRequest('"country" contains unexpected characters');
+  return name;
 }
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -37,7 +47,7 @@ export function parseCommon(query: Record<string, unknown>): CommonParams {
   const from = parseDate('from', query.from);
   const to = parseDate('to', query.to);
   if (from && to && from > to) throw new BadRequest('"from" must not be after "to"');
-  return { bbox: parseBbox(query.bbox), from, to };
+  return { bbox: parseBbox(query.bbox), from, to, country: parseCountry(query.country) };
 }
 
 export function parseEnum<T extends string>(name: string, value: unknown, allowed: readonly T[], fallback: T): T {

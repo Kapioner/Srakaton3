@@ -219,16 +219,34 @@ async function computeMeta(): Promise<MetaResponse> {
 }
 
 async function computeRegions(): Promise<Region[]> {
+  // Also the extent in 0..360 longitudes: for a country across the date line (Russia, Fiji, USA with the
+  // Aleutians) that box is far narrower than -180..180, and MapLibre fits it fine with east > 180.
   const rows = await query(
-    `SELECT country, min(lon)::DOUBLE AS x0, min(lat)::DOUBLE AS y0, max(lon)::DOUBLE AS x1, max(lat)::DOUBLE AS y1, sum(h) AS h
-     FROM harmonized WHERE country IS NOT NULL GROUP BY country ORDER BY country`,
+    `SELECT country, min(lon)::DOUBLE AS x0, min(lat)::DOUBLE AS y0, max(lon)::DOUBLE AS x1, max(lat)::DOUBLE AS y1,
+            min(CASE WHEN lon < 0 THEN lon + 360 ELSE lon END)::DOUBLE AS w0,
+            max(CASE WHEN lon < 0 THEN lon + 360 ELSE lon END)::DOUBLE AS w1, sum(h) AS h
+     FROM harmonized_monthly WHERE country IS NOT NULL GROUP BY country ORDER BY country`,
     WARMUP_TIMEOUT_MS,
+  ).catch(() =>
+    query(
+      `SELECT country, min(lon)::DOUBLE AS x0, min(lat)::DOUBLE AS y0, max(lon)::DOUBLE AS x1, max(lat)::DOUBLE AS y1,
+              min(CASE WHEN lon < 0 THEN lon + 360 ELSE lon END)::DOUBLE AS w0,
+              max(CASE WHEN lon < 0 THEN lon + 360 ELSE lon END)::DOUBLE AS w1, sum(h) AS h
+       FROM harmonized WHERE country IS NOT NULL GROUP BY country ORDER BY country`,
+      WARMUP_TIMEOUT_MS,
+    ),
   );
-  return rows.map((r) => ({
-    country: String(r.country).replaceAll('_', ' '),
-    bbox: [round(num(r.x0) - 0.05), round(num(r.y0) - 0.05), round(num(r.x1) + 0.05), round(num(r.y1) + 0.05)] as Bbox,
-    h: round(r.h, 1),
-  }));
+  return rows.map((r) => {
+    // Use the 0..360 box only when it is clearly narrower (it ties for countries that never touch 0 or 180).
+    const wraps = num(r.w1) - num(r.w0) + 1 < num(r.x1) - num(r.x0);
+    let [x0, x1] = wraps ? [num(r.w0), num(r.w1)] : [num(r.x0), num(r.x1)];
+    if (x0 >= 180) [x0, x1] = [x0 - 360, x1 - 360];
+    return {
+      country: String(r.country).replaceAll('_', ' '),
+      bbox: [round(x0 - 0.05), round(num(r.y0) - 0.05), round(x1 + 0.05), round(num(r.y1) + 0.05)] as Bbox,
+      h: round(r.h, 1),
+    };
+  });
 }
 
 /** Starts the slow metadata queries right after boot, so the first page load does not wait for them. */

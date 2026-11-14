@@ -2,15 +2,21 @@ import { Crop, RotateCcw, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Bbox, MetaResponse, Region } from '../../../shared/api.ts';
 
-/** The applied search. `label` names the region for people ("Greece", "Map view", "All data"). */
+/**
+ * The applied search. `label` names the region for people ("Greece", "Map view", "All data").
+ * A country is filtered by the data's country attribute (`country`), not by its bounding box: a box
+ * catches neighbours' fires and, for Russia, spans the whole globe. `fit` is only where the map zooms to.
+ */
 export interface Query {
   bbox: Bbox | null;
+  country: string | null;
+  fit: Bbox | null;
   from: string | null;
   to: string | null;
   label: string;
 }
 
-export const ALL_DATA: Query = { bbox: null, from: null, to: null, label: 'All data' };
+export const ALL_DATA: Query = { bbox: null, country: null, fit: null, from: null, to: null, label: 'All data' };
 
 interface Props {
   meta: MetaResponse | null;
@@ -31,6 +37,8 @@ const fmtBbox = (b: Bbox) => b.map((v) => v.toFixed(2)).join(', ');
 export function QueryPanel({ meta, regions, query, mapView, busy, onApply }: Props) {
   const [region, setRegion] = useState<string>(query.label);
   const [bbox, setBbox] = useState<Bbox | null>(query.bbox);
+  const [country, setCountry] = useState<string | null>(query.country);
+  const [fit, setFit] = useState<Bbox | null>(query.fit);
   const [from, setFrom] = useState(query.from ?? '');
   const [to, setTo] = useState(query.to ?? '');
 
@@ -38,6 +46,8 @@ export function QueryPanel({ meta, regions, query, mapView, busy, onApply }: Pro
   useEffect(() => {
     setRegion(query.label);
     setBbox(query.bbox);
+    setCountry(query.country);
+    setFit(query.fit);
     setFrom(query.from ?? '');
     setTo(query.to ?? '');
   }, [query]);
@@ -56,19 +66,22 @@ export function QueryPanel({ meta, regions, query, mapView, busy, onApply }: Pro
 
   const pickRegion = (value: string) => {
     setRegion(value);
-    if (value === ALL_DATA.label) setBbox(null);
-    else if (value === 'Map view') setBbox(mapView);
-    else setBbox(regions.find((r) => r.country === value)?.bbox ?? null);
+    const isCountry = value !== ALL_DATA.label && value !== 'Map view';
+    setBbox(value === 'Map view' ? mapView : null);
+    setCountry(isCountry ? value : null);
+    setFit(isCountry ? (regions.find((r) => r.country === value)?.bbox ?? null) : null);
   };
 
   const useMapView = () => {
     if (!mapView) return;
     setRegion('Map view');
     setBbox(mapView);
+    setCountry(null);
+    setFit(null);
   };
 
   const invalidDates = Boolean(from && to && from > to);
-  const apply = () => onApply({ bbox, from: from || null, to: to || null, label: region });
+  const apply = () => onApply({ bbox, country, fit, from: from || null, to: to || null, label: region });
 
   return (
     <form
@@ -96,7 +109,7 @@ export function QueryPanel({ meta, regions, query, mapView, busy, onApply }: Pro
             Map view
           </button>
         </div>
-        <span className="qp-hint mono">{bbox ? fmtBbox(bbox) : 'whole dataset'}</span>
+        <span className="qp-hint mono">{country ? `country: ${country}` : bbox ? fmtBbox(bbox) : 'whole dataset'}</span>
       </div>
 
       <div className="qp-field">

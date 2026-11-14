@@ -10,6 +10,8 @@
 // Common query parameters (all optional):
 //   bbox=minLon,minLat,maxLon,maxLat   region filter; omitted = whole dataset
 //   from=YYYY-MM-DD  to=YYYY-MM-DD     inclusive date range; omitted = full range
+//   country=Name                        FIRMS country (as in /api/regions); filters by the data's country
+//                                       attribute, not by a rectangle. Can be combined with bbox.
 
 export const FIRE_UNIT = 'Aqua-equivalent fire cell-days';
 
@@ -31,6 +33,7 @@ export type DataSource = 'parquet' | 'fixtures';
 
 export interface QueryEcho {
   bbox: Bbox | null;
+  country?: string | null;
   from: string;
   to: string;
 }
@@ -168,7 +171,7 @@ export interface GridResponse {
 // removes, and the calibration factors. Region filter (bbox) only: it always covers all years.
 
 export interface ReportResponse {
-  query: { bbox: Bbox | null };
+  query: { bbox: Bbox | null; country?: string | null };
   /** All detections (every type) per year and satellite: shows the jumps when satellites are added. */
   rawBySatellite: { year: number; satellite: Satellite; n: number }[];
   /** Detections per year and FIRMS type: 0 vegetation fire (kept), 1 volcano, 2 static land source, 3 offshore. */
@@ -184,6 +187,7 @@ export interface ReportResponse {
 
 export interface Region {
   country: string;
+  /** Extent of the country's fires. Crossing the date line (e.g. Russia), east > 180 so it stays one box. */
   bbox: Bbox;
   /** Harmonized total over the whole dataset. */
   h: number;

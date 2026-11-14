@@ -14,6 +14,8 @@ import type {
 
 export interface Filters {
   bbox?: Bbox | null;
+  /** FIRMS country name: filters by the data's country attribute instead of a rectangle. */
+  country?: string | null;
   from?: string | null;
   to?: string | null;
 }
@@ -38,7 +40,7 @@ async function get<T>(path: string, params: Record<string, unknown> = {}, signal
 }
 
 /** Only the query fields the API knows (the panel keeps a label too). */
-const params = (f: Filters) => ({ bbox: f.bbox, from: f.from, to: f.to });
+const params = (f: Filters) => ({ bbox: f.bbox, country: f.country, from: f.from, to: f.to });
 
 export const api = {
   health: () => get<HealthResponse>('/api/health'),
@@ -49,7 +51,7 @@ export const api = {
   summary: (f: Filters, signal?: AbortSignal) => get<SummaryResponse>('/api/summary', params(f), signal),
   series: (f: Filters, signal?: AbortSignal, by: 'year' | 'month' = 'year') =>
     get<SeriesResponse>('/api/series', { ...params(f), by }, signal),
-  report: (f: Filters, signal?: AbortSignal) => get<ReportResponse>('/api/report', { bbox: f.bbox }, signal),
+  report: (f: Filters, signal?: AbortSignal) => get<ReportResponse>('/api/report', { bbox: f.bbox, country: f.country }, signal),
   grid: (f: Filters, signal?: AbortSignal, res = 0.1) => get<GridResponse>('/api/grid', { ...params(f), res }, signal),
   points: (f: Filters, signal?: AbortSignal, limit = 5_000) => get<PointsResponse>('/api/points', { ...params(f), limit }, signal),
   /** Link target for the CSV download button. */

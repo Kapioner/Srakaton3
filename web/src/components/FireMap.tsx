@@ -67,7 +67,7 @@ export function FireMap({ grid, bbox, selection, onViewChange, locations, select
         type: 'circle',
         source: 'fires',
         paint: {
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 6, 8, 22],
+          'circle-radius': glowFor(0.1),
           'circle-color': theme.red,
           'circle-opacity': 0.12,
           'circle-blur': 0.9,
@@ -162,6 +162,7 @@ export function FireMap({ grid, bbox, selection, onViewChange, locations, select
       const maxLn = Math.max(1, ...grid.features.map((f) => Math.log(1 + f.properties.h)));
       m.setPaintProperty('fires', 'circle-color', colourFor(maxLn));
       m.setPaintProperty('fires', 'circle-radius', radiusFor(grid.query.res));
+      m.setPaintProperty('fires-glow', 'circle-radius', glowFor(grid.query.res));
     }
   }, [grid, ready]);
 
@@ -288,8 +289,22 @@ function colourFor(maxLn: number): maplibregl.ExpressionSpecification {
   return expr as maplibregl.ExpressionSpecification;
 }
 
-/** Circle radius by zoom, larger for coarser cells (the server coarsens big regions). */
+/**
+ * Circle radius by zoom = the cell's real size on screen, so dots never overlap however coarse the grid is
+ * (the server coarsens big regions to 0.25-1 deg). Web Mercator at zoom z: 512 * 2^z px per 360 deg.
+ * `fill` < 0.5 leaves a hairline gap between neighbouring cells; `min` keeps tiny cells visible.
+ */
+function cellRadius(res: number, fill: number, min: number): maplibregl.ExpressionSpecification {
+  const expr: unknown[] = ['interpolate', ['exponential', 2], ['zoom']];
+  for (let z = 0; z <= 14; z++) expr.push(z, Math.max(min, fill * res * (512 / 360) * 2 ** z));
+  return expr as maplibregl.ExpressionSpecification;
+}
+
 function radiusFor(res: number): maplibregl.ExpressionSpecification {
-  const k = Math.min(8, Math.max(1, res / 0.1)) ** 0.75;
-  return ['interpolate', ['exponential', 2], ['zoom'], 2, 1.2 * k, 5, 3 * k, 8, 11 * k, 11, 60 * k] as maplibregl.ExpressionSpecification;
+  return cellRadius(res, 0.45, 1.2);
+}
+
+/** Soft halo around each cell, a little wider than the cell itself. */
+function glowFor(res: number): maplibregl.ExpressionSpecification {
+  return cellRadius(res, 1.1, 2.5);
 }

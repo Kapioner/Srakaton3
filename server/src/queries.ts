@@ -31,6 +31,13 @@ export interface Filters {
   bbox: Bbox | null;
   from: string;
   to: string;
+  /** FIRMS country name as stored (underscores); filters by the data's country attribute. */
+  country?: string | null;
+}
+
+/** SQL condition for the country filter (all three tables have a `country` column), or null. */
+function countryCond(f: Filters): string | null {
+  return f.country ? `country = '${f.country.replaceAll("'", "''")}'` : null;
 }
 
 /** Fills missing dates with the dataset range and clamps the request to it. */
@@ -39,7 +46,7 @@ export async function resolveFilters(p: CommonParams): Promise<{ f: Filters; met
   const from = p.from && p.from > meta.dateRange.from ? p.from : meta.dateRange.from;
   const to = p.to && p.to < meta.dateRange.to ? p.to : meta.dateRange.to;
   if (from > to) throw new BadRequest(`No data in the requested dates (dataset covers ${meta.dateRange.from} to ${meta.dateRange.to})`);
-  return { f: { bbox: p.bbox, from, to }, meta };
+  return { f: { bbox: p.bbox, from, to, country: p.country ?? null }, meta };
 }
 
 const year = (d: string) => Number(d.slice(0, 4));
@@ -51,6 +58,8 @@ function hzWhere(f: Filters, from = f.from, to = f.to): string {
     const [x0, y0, x1, y1] = f.bbox;
     parts.push(`lon BETWEEN ${x0} AND ${x1}`, `lat BETWEEN ${y0} AND ${y1}`);
   }
+  const cc = countryCond(f);
+  if (cc) parts.push(cc);
   return parts.join(' AND ');
 }
 
@@ -68,6 +77,8 @@ function monthlyWhere(f: Filters, meta: MetaResponse, from = f.from, to = f.to):
     const [x0, y0, x1, y1] = f.bbox;
     parts.push(`lon BETWEEN ${x0} AND ${x1}`, `lat BETWEEN ${y0} AND ${y1}`);
   }
+  const cc = countryCond(f);
+  if (cc) parts.push(cc);
   return parts.join(' AND ');
 }
 
@@ -78,6 +89,8 @@ function hsWhere(f: Filters): string {
     const [x0, y0, x1, y1] = f.bbox;
     parts.push(`longitude BETWEEN ${x0} AND ${x1}`, `latitude BETWEEN ${y0} AND ${y1}`);
   }
+  const cc = countryCond(f);
+  if (cc) parts.push(cc);
   return parts.join(' AND ');
 }
 
@@ -122,7 +135,7 @@ export async function calendar(p: CommonParams, granularity: 'month' | 'day', me
        FROM harmonized WHERE ${hzWhere(yf)} GROUP BY ALL ORDER BY ALL`,
     );
     const cells: CalendarCell[] = rows.map((r) => ({ year: Number(r.y), month: Number(r.m), day: Number(r.d), value: r1(n(r.v)), anomaly: null, rank: null }));
-    return { query: { bbox: f.bbox, from: yf.from, to: f.to, granularity, metric }, unit: unitOf(metric), cells, baseline: [], baselineYears: [y0, y1] };
+    return { query: { bbox: f.bbox, country: f.country ?? null, from: yf.from, to: f.to, granularity, metric }, unit: unitOf(metric), cells, baseline: [], baselineYears: [y0, y1] };
   }
 
   const mWhere = monthlyWhere(yf, meta);
@@ -160,7 +173,7 @@ export async function calendar(p: CommonParams, granularity: 'month' | 'day', me
     }
   }
 
-  return { query: { bbox: f.bbox, from: yf.from, to: f.to, granularity, metric }, unit: unitOf(metric), cells, baseline, baselineYears: [y0, y1] };
+  return { query: { bbox: f.bbox, country: f.country ?? null, from: yf.from, to: f.to, granularity, metric }, unit: unitOf(metric), cells, baseline, baselineYears: [y0, y1] };
 }
 
 function unitOf(metric: Metric): string {
@@ -198,7 +211,7 @@ export async function summary(p: CommonParams): Promise<SummaryResponse> {
   const peakYear = [...years.entries()].sort((a, b) => b[1] - a[1])[0];
 
   return {
-    query: { bbox: f.bbox, from: f.from, to: f.to },
+    query: { bbox: f.bbox, country: f.country ?? null, from: f.from, to: f.to },
     unit: FIRE_UNIT,
     total: r1(Number(tot.h))!,
     rawDetections: Number(tot.raw),
@@ -239,7 +252,7 @@ async function samePeriodComparison(f: Filters, meta: MetaResponse, total: numbe
   const startYear = crosses ? `year(acq_date) - CASE WHEN ${mdExpr} <= ${md(f.to)} THEN 1 ELSE 0 END` : 'year(acq_date)';
   const yMin = Math.min(...startYears);
   const yMax = Math.max(...startYears) + (crosses ? 1 : 0);
-  const bboxWhere = f.bbox ? `AND lon BETWEEN ${f.bbox[0]} AND ${f.bbox[2]} AND lat BETWEEN ${f.bbox[1]} AND ${f.bbox[3]}` : '';
+  const bboxWhere = (f.bbox ? `AND lon BETWEEN ${f.bbox[0]} AND ${f.bbox[2]} AND lat BETWEEN ${f.bbox[1]} AND ${f.bbox[3]}` : '') + (countryCond(f) ? ` AND ${countryCond(f)}` : '');
   const found = await query(`
     SELECT (${startYear})::INT AS y, coalesce(sum(h), 0) AS v FROM harmonized
     WHERE ${inWindow} AND year BETWEEN ${yMin} AND ${yMax} ${bboxWhere}
@@ -294,7 +307,7 @@ export async function series(p: CommonParams, by: 'year' | 'month'): Promise<Ser
       });
     }
   }
-  return { query: { bbox: f.bbox, from: yf.from, to: f.to, by }, unit: FIRE_UNIT, points };
+  return { query: { bbox: f.bbox, country: f.country ?? null, from: yf.from, to: f.to, by }, unit: FIRE_UNIT, points };
 }
 
 // ---- /api/grid ----------------------------------------------------------------------------------------
@@ -331,7 +344,7 @@ export async function grid(p: CommonParams, requestedRes: number): Promise<GridR
 
   return {
     type: 'FeatureCollection',
-    query: { bbox: f.bbox, from: f.from, to: f.to, res },
+    query: { bbox: f.bbox, country: f.country ?? null, from: f.from, to: f.to, res },
     truncated: rows.length > max,
     features: rows.slice(0, max).map((r) => ({
       type: 'Feature',
@@ -351,7 +364,7 @@ export async function points(p: CommonParams, limit: number): Promise<PointsResp
     FROM hotspots WHERE ${hsWhere(f)} ORDER BY frp DESC NULLS LAST LIMIT ${cap + 1}`);
   return {
     type: 'FeatureCollection',
-    query: { bbox: f.bbox, from: f.from, to: f.to, limit: cap },
+    query: { bbox: f.bbox, country: f.country ?? null, from: f.from, to: f.to, limit: cap },
     truncated: rows.length > cap,
     features: rows.slice(0, cap).map((r) => ({
       type: 'Feature',
@@ -397,8 +410,11 @@ export async function exportCsv(p: CommonParams): Promise<{ stream: Readable; fi
  * Report data for a region. `hotspots` / `calibration` are table expressions so the fixtures script can
  * run the same SQL on read_parquet(...) directly.
  */
-export async function buildReport(hotspots: string, calibration: string | null, bbox: Bbox | null, timeoutMs?: number) {
-  const where = bbox ? `WHERE longitude BETWEEN ${bbox[0]} AND ${bbox[2]} AND latitude BETWEEN ${bbox[1]} AND ${bbox[3]}` : '';
+export async function buildReport(hotspots: string, calibration: string | null, bbox: Bbox | null, timeoutMs?: number, country?: string | null) {
+  const conds: string[] = [];
+  if (bbox) conds.push(`longitude BETWEEN ${bbox[0]} AND ${bbox[2]} AND latitude BETWEEN ${bbox[1]} AND ${bbox[3]}`);
+  if (country) conds.push(`country = '${country.replaceAll("'", "''")}'`);
+  const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
   const rows = await query(
     `SELECT year::INT AS y, satellite AS s, type::INT AS t, count(*) AS n FROM ${hotspots} ${where} GROUP BY ALL ORDER BY ALL`,
     timeoutMs,
@@ -434,13 +450,13 @@ const reportCache = new Map<string, Promise<ReportResponse>>();
 
 export async function report(p: CommonParams): Promise<ReportResponse> {
   const meta = await getMeta();
-  const key = `${meta.dateRange.from}|${meta.dateRange.to}|${meta.countries.length}|${p.bbox?.join(',') ?? 'all'}`;
+  const key = `${meta.dateRange.from}|${meta.dateRange.to}|${meta.countries.length}|${p.bbox?.join(',') ?? 'all'}|${p.country ?? ''}`;
   let hit = reportCache.get(key);
   if (!hit) {
     hit = (async () => {
       const calib = existsSync(paths.calibrationFile) ? `read_parquet('${fwd(paths.calibrationFile)}')` : null;
-      const body = await buildReport('hotspots', calib, p.bbox, Math.max(config.limits.queryTimeoutMs, 120_000));
-      return { query: { bbox: p.bbox }, ...body, frpEdges: meta.harmonization.frpEdges, reference: meta.harmonization.reference };
+      const body = await buildReport('hotspots', calib, p.bbox, Math.max(config.limits.queryTimeoutMs, 120_000), p.country);
+      return { query: { bbox: p.bbox, country: p.country ?? null }, ...body, frpEdges: meta.harmonization.frpEdges, reference: meta.harmonization.reference };
     })();
     hit.catch(() => reportCache.delete(key));
     if (reportCache.size > 30) reportCache.delete(reportCache.keys().next().value!);
