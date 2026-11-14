@@ -116,10 +116,11 @@ if (!window.echarts) {
 // House style (same tokens as web/src/theme.ts): signal red, bone white and greys on near-black.
 const MONO = "'Space Mono', ui-monospace, monospace", SANS = "'Space Grotesk', system-ui, sans-serif";
 const C = { ink: '#ff5c70', muted: '#ff5c70', grid: 'rgba(249,17,51,0.14)', card: '#100e0f', bone: '#efe9ea', red: '#f91133',
-  sat: { Terra: '#f91133', Aqua: '#8f0b20', 'S-NPP': '#ff8a99', 'NOAA-20': '#efe9ea', 'NOAA-21': '#6b5d60' },
-  raw: '#7a6e70', h: '#f91133', hm: '#efe9ea', hv: '#ff8a99',
-  // single-hue ramp, lightness rises monotonically (colour-blind and greyscale safe)
-  ramp: ['#1d1718', '#3d0c14', '#6e0d1d', '#a80f28', '#f91133', '#ff6b7d', '#ffc4cc'] };
+  // Data colours, same meaning as in web/src/theme.ts: amber = MODIS, sky/teal = VIIRS, red = harmonized, grey = raw.
+  sat: { Terra: '#ffb020', Aqua: '#ffd27a', 'S-NPP': '#4cc9f0', 'NOAA-20': '#2ec4a0', 'NOAA-21': '#9be7ff' },
+  raw: '#a39a9c', h: '#f91133', hm: '#ffb020', hv: '#4cc9f0', violet: '#b18cff',
+  // "fire" ramp: lightness rises monotonically like inferno (colour-blind and greyscale safe)
+  ramp: ['#1d1718', '#3a1029', '#6b1238', '#a8133a', '#f91133', '#ff6a2b', '#ffb020', '#ffe7a3'] };
 const TIP = { backgroundColor: C.card, borderColor: C.red, borderWidth: 1, textStyle: { color: C.bone, fontFamily: MONO, fontSize: 13 }, extraCssText: 'border-radius:0;box-shadow:none;' };
 const AXL = { color: C.muted, fontFamily: MONO, fontSize: 13 };
 const fmt = (v) => v == null ? 'brak' : Math.round(v).toLocaleString('pl-PL');
@@ -153,7 +154,7 @@ const sats = D.sats.map((s) => s.s);
 chart('c1', { ...base(), series: sats.map((s) => ({ name: s, type: 'bar', stack: 'a', barMaxWidth: 24, itemStyle: { color: C.sat[s], borderColor: C.card, borderWidth: 1 }, data: byYear(D.rawBySat, (r) => r.s === s) })) });
 
 // 2. type filter
-const types = [[0, 'Pożar roślinności (zostaje)', C.h], [2, 'Źródło statyczne', C.bone], [1, 'Wulkan', C.hv], [3, 'Offshore', C.raw]];
+const types = [[0, 'Pożar roślinności (zostaje)', C.h], [2, 'Źródło statyczne', C.bone], [1, 'Wulkan', C.violet], [3, 'Offshore', C.hv]];
 chart('c2', { ...base(), series: types.filter(([t]) => D.byType.some((r) => r.t === t)).map(([t, name, color]) => ({ name, type: 'bar', stack: 'a', barMaxWidth: 24, itemStyle: { color, borderColor: C.card, borderWidth: 1 }, data: byYear(D.byType, (r) => r.t === t) })) });
 
 // 3. before/after index (baseline = years before VIIRS, or all years if none)

@@ -34,7 +34,16 @@ async function get<T>(path: string, params: Record<string, unknown> = {}): Promi
   return res.json() as Promise<T>;
 }
 
+/** GET /api/health (server-only shape, not part of the shared contract). */
+export interface HealthResponse {
+  ok: boolean;
+  duckdb: string;
+  harmonizedRows: number | null;
+  fixtures: boolean;
+}
+
 export const api = {
+  health: () => get<HealthResponse>('/api/health'),
   meta: () => get<MetaResponse>('/api/meta'),
   calendar: (f: Filters, granularity: 'month' | 'day' = 'month', metric: Metric = 'h') =>
     get<CalendarResponse>('/api/calendar', { ...f, granularity, metric }),
