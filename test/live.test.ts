@@ -46,6 +46,7 @@ test('live feature: scope → ingest → query → situation → forecast', asyn
       pauseResumeMinutes: 60,
       tmpDir: path.join(os.tmpdir(), `firewatch-test-${process.pid}`),
       archiveDir: path.join(os.tmpdir(), `firewatch-no-archive-${process.pid}`),
+      etlDir: null,
     },
     db,
     { logger: false },

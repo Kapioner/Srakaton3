@@ -7,16 +7,21 @@ forecast. It does **not** harmonize anything; that is the ETL's job (`etl/src/ha
 ## Run
 
 ```bash
-cd etl && npm install && cd ..   # the server imports etl/src at runtime and in tests
-cd server
 npm install
-npm run dev                      # http://localhost:3001
-npm test                         # local fake FIRMS + the real ETL normalize SQL, no network needed
+npm run dev        # http://localhost:3001
+npm test           # local fake FIRMS; the archive test also runs the real ETL normalize SQL
 ```
 
-Env (see `.env.example`); relative paths resolve against the repo root, as in the ETL:
-`ARCHIVE_DIR` (default `data/parquet`, i.e. the ETL's `OUTPUT_DIR`), `LIVE_DB_PATH`
-(default `data/live/live.duckdb`), `LIVE_POLLING`, `LIVE_RETENTION_DAYS`, `LIVE_PAUSE_RESUME_MINUTES`.
+The server looks for the ETL in this order: `ETL_DIR`, then an `etl/` folder next to the server or in
+any parent folder (monorepo layout `<repo>/server` + `<repo>/etl`). From the ETL it reads the
+harmonization parameters (`etl/src/harmonization.ts`) and, in tests, the normalize SQL. Run
+`npm install` inside the ETL too. Without an ETL the server still starts: it logs a warning, uses the
+default grid (0.02°) and the archive test is skipped.
+
+Relative data paths resolve against the repo root (the ETL's parent folder), as in the ETL itself;
+without an ETL, against the server folder. Env (see `.env.example`): `ETL_DIR`, `ARCHIVE_DIR`
+(default `data/parquet`, i.e. the ETL's `OUTPUT_DIR`), `LIVE_DB_PATH` (default
+`data/live/live.duckdb`), `REPO_ROOT`, `LIVE_POLLING`, `LIVE_RETENTION_DAYS`, `LIVE_PAUSE_RESUME_MINUTES`.
 
 ## Data model: archive + live
 
@@ -144,7 +149,8 @@ A wind-aware model can replace it by implementing `SpreadPredictor`.
 
 ```
 src/
-  index.ts, app.ts, config.ts      bootstrap, composition root
+  index.ts, app.ts, config.ts      bootstrap, composition root, ETL discovery
+  etl.ts                           reads harmonization parameters from the ETL at runtime
   db/
     database.ts, schema.ts         DuckDB wrapper; live table = ETL hotspot schema
     catalog.ts                     archive (ETL Parquet) + live → view hotspots_all

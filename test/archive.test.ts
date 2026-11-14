@@ -3,12 +3,16 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-// The real ETL step 1, so the archive here is exactly what `npm run normalize` writes.
-import { copyToParquet } from '../../etl/src/sql.ts';
+import { pathToFileURL } from 'node:url';
 import { buildApp } from '../src/app.js';
+import { findEtlDir } from '../src/config.js';
 import { Database } from '../src/db/database.js';
 import { HOTSPOT_COLUMNS } from '../src/db/schema.js';
 import { acqDate, startFakeFirms } from './helpers.js';
+
+// The real ETL step 1, so the archive here is exactly what `npm run normalize` writes.
+const etlDir = findEtlDir();
+const etlSql = etlDir ? await import(pathToFileURL(path.join(etlDir, 'src', 'sql.ts')).href) : null;
 
 const DAY = 86_400_000;
 const day = (offset: number) => acqDate(new Date(Date.now() + offset * DAY));
@@ -24,7 +28,7 @@ async function etlNormalize(db: Database, archiveDir: string, rawDir: string, na
   fs.writeFileSync(file, [ARCHIVE_VIIRS_HEADER, ...rows].join('\n') + '\n');
   const staging = path.join(archiveDir, '.staging', name);
   fs.mkdirSync(path.dirname(staging), { recursive: true }); // normalize.ts creates its staging root too
-  await db.run(copyToParquet([{ path: file, source, year: Number(y), country } as any], staging));
+  await db.run(etlSql.copyToParquet([{ path: file, source, year: Number(y), country } as any], staging));
   // Same swap-into-place step as etl/src/normalize.ts.
   const target = path.join(archiveDir, 'hotspots', `year=${y}`, `country=${country}`);
   fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -33,7 +37,7 @@ async function etlNormalize(db: Database, archiveDir: string, rawDir: string, na
   fs.rmSync(path.join(archiveDir, '.staging'), { recursive: true, force: true });
 }
 
-test('archive (ETL Parquet) and live data are read as one dataset', async (t) => {
+test('archive (ETL Parquet) and live data are read as one dataset', { skip: etlDir ? false : 'ETL not found: set ETL_DIR' }, async (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'firewatch-archive-'));
   const archiveDir = path.join(root, 'parquet');
   const rawDir = path.join(root, 'raw');
@@ -64,6 +68,7 @@ test('archive (ETL Parquet) and live data are read as one dataset', async (t) =>
       host: '127.0.0.1',
       liveDbPath: ':memory:',
       archiveDir,
+      etlDir,
       firmsBaseUrl: firms.baseUrl,
       pollingEnabled: false,
       retentionDays: 30,

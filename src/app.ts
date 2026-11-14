@@ -5,6 +5,7 @@ import type { AppConfig } from './config.js';
 import { HotspotCatalog } from './db/catalog.js';
 import type { Database } from './db/database.js';
 import { migrate } from './db/schema.js';
+import { loadEtlParams } from './etl.js';
 import { ActiveFireFeedSource, type HotspotSource } from './live/firms/source.js';
 import { CentroidDriftPredictor } from './live/forecast/predictor.js';
 import { SituationService } from './live/forecast/situationService.js';
@@ -42,7 +43,8 @@ export async function buildApp(config: AppConfig, db: Database, overrides: AppOv
       )
     : null;
   const acquisition = new AcquisitionController(scheduler, config.pauseResumeMinutes);
-  const report = new ReportService(db, state, () => acquisition.current);
+  const etl = await loadEtlParams(config.etlDir, app.log);
+  const report = new ReportService(db, state, () => acquisition.current, etl);
 
   app.get('/health', async () => ({ status: 'ok' }));
   await app.register(liveRoutes, {

@@ -1,6 +1,5 @@
-// The ETL owns the method; the report only reuses its fine grid so "fire cells" mean the same thing.
-import { HARMONIZATION } from '../../../etl/src/harmonization.ts';
 import { toSqlTimestamp, type Database } from '../db/database.js';
+import type { EtlParams } from '../etl.js';
 import type { BBox } from './domain.js';
 import type { ModeState } from './modeController.js';
 import { buildWhere, type IngestStateRepository } from './repository.js';
@@ -15,7 +14,6 @@ export interface ReportQuery {
 /** Size of the coarse cells used to rank the most active areas, in degrees (~55 km). */
 const AREA_CELL_DEG = 0.5;
 const TOP_AREAS = 10;
-const CELL = HARMONIZATION.fineGridDeg;
 
 /**
  * Summary of the current picture for one area and time window, read from `hotspots_all`
@@ -28,6 +26,8 @@ export class ReportService {
     private readonly db: Database,
     private readonly state: IngestStateRepository,
     private readonly mode: () => ModeState,
+    /** The ETL owns the method; the report only reuses its fine grid so "fire cells" mean the same thing. */
+    private readonly etl: EtlParams,
   ) {}
 
   async report(query: ReportQuery) {
@@ -36,7 +36,8 @@ export class ReportService {
     const scope = await this.state.getScope();
     const bbox = query.bbox ?? scope.bbox;
     const { where, params } = buildWhere({ bbox, from, to: now, vegetationOnly: true });
-    const cell = `(floor(latitude / ${CELL}), floor(longitude / ${CELL}))`;
+    const size = this.etl.fineGridDeg;
+    const cell = `(floor(latitude / ${size}), floor(longitude / ${size}))`;
 
     const [totals] = await this.db.all(
       `SELECT CAST(count(*) AS INTEGER) AS detections,
@@ -102,7 +103,7 @@ export class ReportService {
       generatedAt: now.toISOString(),
       area: { bbox, source: query.bbox ? 'request' : scope.bbox ? 'ingest-scope' : 'all' },
       window: { from: from.toISOString(), to: now.toISOString(), hours: query.hours },
-      units: { fireCellDeg: CELL, harmonized: false },
+      units: { fireCellDeg: size, harmonized: false, gridFrom: this.etl.source },
       acquisition: { ...this.mode(), scope, lastRun: await this.state.lastRun() },
       totals,
       byConfidence,
