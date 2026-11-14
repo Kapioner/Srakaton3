@@ -16,6 +16,7 @@ import { loadEtlParams } from './etl.js';
 import { ActiveFireFeedSource } from './live/firms/source.js';
 import { CentroidDriftPredictor } from './live/forecast/predictor.js';
 import { SituationService } from './live/forecast/situationService.js';
+import { OpenMeteoWind } from './live/forecast/wind.js';
 import { IngestService } from './live/ingestService.js';
 import { AcquisitionController } from './live/modeController.js';
 import { ReportService } from './live/reportService.js';
@@ -35,7 +36,9 @@ export async function registerLive(app: FastifyInstance): Promise<void> {
   const state = new IngestStateRepository(db);
   const source = new ActiveFireFeedSource(config.firmsBaseUrl, config.tmpDir);
   const ingest = new IngestService(source, hotspots, state, catalog, config.retentionDays, app.log);
-  const situation = new SituationService(hotspots, new CentroidDriftPredictor());
+  // Real wind (Open-Meteo, no key) for downwind cones; WIND_ENABLED=false keeps the forecast offline.
+  const wind = process.env.WIND_ENABLED === 'false' ? null : new OpenMeteoWind({}, { warn: (msg) => app.log.warn(msg) });
+  const situation = new SituationService(hotspots, new CentroidDriftPredictor(), wind);
   const scheduler = config.pollingEnabled
     ? new PollingScheduler(
         () => ingest.run(),

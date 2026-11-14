@@ -1,5 +1,5 @@
 import { Crosshair, Radio } from 'lucide-react';
-import type { LiveFire, LiveForecast, LiveMotion, LiveSituation, LiveStatus } from '../../../shared/api.ts';
+import type { LiveFire, LiveForecast, LiveLandCover, LiveMotion, LiveSituation, LiveStatus } from '../../../shared/api.ts';
 import { LIVE_COLORS } from './FireMap.tsx';
 
 interface Props {
@@ -30,6 +30,14 @@ function motionText(m: LiveMotion | undefined): string {
   return `→ ${compass(m.bearingDeg)} ${m.speedKmh.toFixed(1)} km/h`;
 }
 
+function windText(m: LiveMotion | undefined): string {
+  const w = m?.wind;
+  if (!w) return 'n/a';
+  return `→ ${compass(w.towardDeg)} ${Math.round(w.speedKmh)} km/h`;
+}
+
+const ALERT_CLASS: Record<LiveLandCover['alert'], string> = { ALARM: 'alarm', WARNING: 'warning', WATCH: 'watch', MONITOR: 'monitor' };
+
 /**
  * "What burns now" next to the history: the largest active fires in the map view (FIRMS near-real-time,
  * last 24 h), how they move (trend of the last 48 h), and how fresh the feed is.
@@ -42,7 +50,7 @@ export function LivePanel({ on, onToggle, status, situation, forecast, loading, 
   for (const f of forecast?.features ?? []) {
     if (f.properties.kind !== 'track' || f.geometry.type !== 'LineString') continue;
     motion.set(f.properties.clusterId, f.properties);
-    const coords = f.geometry.coordinates;
+    const coords = f.geometry.coordinates as number[][];
     tracks.push({ motion: f.properties, last: coords[Math.max(0, f.properties.observedPoints - 1)] ?? coords[0] });
   }
   const motionFor = (fire: LiveFire): LiveMotion | undefined => {
@@ -81,12 +89,17 @@ export function LivePanel({ on, onToggle, status, situation, forecast, loading, 
 
       {on && (
         <>
-          <p className="section-note">
-            Fires detected in the last 24 h in the map view
-            {situation ? ` · ${fires.length} active` : ''}. <span style={{ color: LIVE_COLORS.fire }}>■</span> current fire{' '}
-            <span style={{ color: LIVE_COLORS.forecast }}>■</span> observed track and expected position in 6 / 12 / 24 h.
-            Move or zoom the map to search elsewhere.
-          </p>
+          <ul className="live-legend mono" aria-label="Live map legend">
+            <li className="dim">Last 24 h{situation ? ` · ${fires.length} active` : ''}</li>
+            <li><i style={{ background: LIVE_COLORS.fire }} />fire</li>
+            <li><i style={{ background: LIVE_COLORS.forecast }} />track</li>
+            <li title="Likely direction from current wind and observed drift">
+              <i style={{ background: LIVE_COLORS.spread6 }} />
+              <i style={{ background: LIVE_COLORS.spread12 }} />
+              <i style={{ background: LIVE_COLORS.spread24 }} />6/12/24 h
+            </li>
+            <li><i className="ring" style={{ borderColor: LIVE_COLORS.alarm }} />alarm</li>
+          </ul>
           {error && <p className="error">Live: {error}</p>}
           {!error && loading && !situation && <p className="loading">Loading live fires</p>}
           {top.length > 0 && (
@@ -97,6 +110,10 @@ export function LivePanel({ on, onToggle, status, situation, forecast, loading, 
                   <th>Area</th>
                   <th>Max FRP</th>
                   <th>Movement</th>
+                  <th>Wind</th>
+                  <th>
+                    Land cover <span className="ai-tag">AI · simulated</span>
+                  </th>
                   <th>Last seen</th>
                   <th aria-label="Show on map" />
                 </tr>
@@ -113,6 +130,19 @@ export function LivePanel({ on, onToggle, status, situation, forecast, loading, 
                       {motionText(motionFor(f))}
                       {motionFor(f) && <span className="dim"> · {motionFor(f)!.confidence}</span>}
                     </td>
+                    <td className="mono">{windText(motionFor(f))}</td>
+                    <td>
+                      {f.landCover ? (
+                        <span
+                          className={`alert-badge ${ALERT_CLASS[f.landCover.alert]}`}
+                          title={`Simulated classifier, ${Math.round(f.landCover.confidence * 100)}% confidence`}
+                        >
+                          {f.landCover.alert} · {f.landCover.label}
+                        </span>
+                      ) : (
+                        <span className="dim">n/a</span>
+                      )}
+                    </td>
                     <td className="mono dim">{ago(f.lastSeen)}</td>
                     <td>
                       <button type="button" className="qp-ghost" onClick={() => onFocus(f.centroid)} title="Show on map">
@@ -126,6 +156,9 @@ export function LivePanel({ on, onToggle, status, situation, forecast, loading, 
           )}
           {situation && fires.length === 0 && !loading && <p className="section-note">No active fires in this view in the last 24 h.</p>}
           {forecast && <p className="section-note dim">Forecast: {forecast.metadata.disclaimer}</p>}
+          <p className="section-note dim">
+            Land cover: prototype of an AI classifier for satellite imagery. Classes and alert levels shown here are simulated.
+          </p>
         </>
       )}
     </div>

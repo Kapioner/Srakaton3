@@ -33,7 +33,7 @@ interface Props {
 }
 
 /** Live fires: yellow, distinct from the red-to-gold history ramp; forecast: cyan. */
-export const LIVE_COLORS = { fire: '#ffe14d', forecast: '#5ef2ff' };
+export const LIVE_COLORS = { fire: '#ffe14d', forecast: '#5ef2ff', wind: '#ff6a2b', alarm: '#f91133', spread6: '#f91133', spread12: '#ff6a2b', spread24: '#ffb020' };
 
 /** MapLibre map: harmonized fire grid (fire ramp) + the user's watch locations (violet). */
 export function FireMap({ grid, bbox, selection, onViewChange, locations, selectedId, addMode, onAdd, onSelect, drawerOpen, children, live: liveLayer, focus }: Props) {
@@ -98,19 +98,57 @@ export function FireMap({ grid, bbox, selection, onViewChange, locations, select
       instance.addSource('live-fires', { type: 'geojson', data: EMPTY });
       instance.addSource('live-points', { type: 'geojson', data: EMPTY });
       instance.addSource('live-forecast', { type: 'geojson', data: EMPTY });
+      // Drift uncertainty circles stay as a faint background; the spread cones on top are the message.
       instance.addLayer({
         id: 'live-forecast-area',
         type: 'fill',
         source: 'live-forecast',
         filter: ['==', ['get', 'kind'], 'forecast_area'],
-        paint: { 'fill-color': LIVE_COLORS.forecast, 'fill-opacity': ['interpolate', ['linear'], ['get', 'horizonHours'], 6, 0.16, 24, 0.05] },
+        paint: { 'fill-color': LIVE_COLORS.forecast, 'fill-opacity': ['interpolate', ['linear'], ['get', 'horizonHours'], 6, 0.05, 24, 0.015] },
       });
       instance.addLayer({
         id: 'live-forecast-outline',
         type: 'line',
         source: 'live-forecast',
         filter: ['==', ['get', 'kind'], 'forecast_area'],
-        paint: { 'line-color': LIVE_COLORS.forecast, 'line-width': 1, 'line-dasharray': [2, 2], 'line-opacity': 0.55 },
+        paint: { 'line-color': LIVE_COLORS.forecast, 'line-width': 1, 'line-dasharray': [2, 2], 'line-opacity': 0.18 },
+      });
+      // Where the fire most likely heads (wind + observed drift): 24 h band underneath, 6 h band on top,
+      // like a heat trail that fades with time; then the most-likely path with an arrowhead.
+      const spreadColour: maplibregl.ExpressionSpecification = [
+        'match', ['get', 'horizonHours'], 6, LIVE_COLORS.spread6, 12, LIVE_COLORS.spread12, LIVE_COLORS.spread24,
+      ];
+      instance.addLayer({
+        id: 'live-spread-cone',
+        type: 'fill',
+        source: 'live-forecast',
+        filter: ['==', ['get', 'kind'], 'spread_cone'],
+        paint: {
+          'fill-color': spreadColour,
+          'fill-opacity': ['match', ['get', 'horizonHours'], 6, 0.62, 12, 0.4, 0.24],
+        },
+      });
+      instance.addLayer({
+        id: 'live-spread-cone-line',
+        type: 'line',
+        source: 'live-forecast',
+        filter: ['==', ['get', 'kind'], 'spread_cone'],
+        paint: { 'line-color': spreadColour, 'line-width': 1.4, 'line-opacity': 0.95 },
+      });
+      instance.addLayer({
+        id: 'live-spread-axis',
+        type: 'line',
+        source: 'live-forecast',
+        filter: ['==', ['get', 'kind'], 'spread_axis'],
+        layout: { 'line-cap': 'round' },
+        paint: { 'line-color': theme.bone, 'line-width': 2.5, 'line-dasharray': [1.5, 1.2], 'line-opacity': 0.95 },
+      });
+      instance.addLayer({
+        id: 'live-spread-head',
+        type: 'fill',
+        source: 'live-forecast',
+        filter: ['==', ['get', 'kind'], 'spread_head'],
+        paint: { 'fill-color': theme.bone, 'fill-opacity': 0.95 },
       });
       instance.addLayer({
         id: 'live-track',
@@ -143,6 +181,19 @@ export function FireMap({ grid, bbox, selection, onViewChange, locations, select
           'circle-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0.9, 9, 0.15],
           'circle-stroke-width': 1.5,
           'circle-stroke-color': theme.panel,
+        },
+      });
+      // Simulated AI land cover: fires classified as urban get a red ALARM ring.
+      instance.addLayer({
+        id: 'live-alarm',
+        type: 'circle',
+        source: 'live-points',
+        filter: ['==', ['get', 'alert'], 'ALARM'],
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 9, 9, 22],
+          'circle-color': 'transparent',
+          'circle-stroke-width': 3,
+          'circle-stroke-color': LIVE_COLORS.alarm,
         },
       });
 
@@ -296,7 +347,8 @@ export function FireMap({ grid, bbox, selection, onViewChange, locations, select
       features: (liveLayer?.situation?.features ?? []).map((f) => ({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: f.properties.centroid },
-        properties: f.properties as unknown as Record<string, unknown>,
+        // landCover is nested; MapLibre filters need the alert level at the top level.
+        properties: { ...(f.properties as unknown as Record<string, unknown>), alert: f.properties.landCover?.alert ?? null },
       })),
     });
     (m.getSource('live-forecast') as maplibregl.GeoJSONSource).setData((liveLayer?.forecast as unknown as FeatureCollection) ?? EMPTY);

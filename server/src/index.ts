@@ -15,9 +15,9 @@ await app.register(cors, { origin: true });
 await app.register(compress);
 await app.register(apiRoutes);
 
-// Live FIRMS feed + forecast under /api/live (from the API_backend branch). Off unless LIVE_ENABLED=true,
-// so a demo without internet, or a problem in the live part, never affects the archive API.
-if (process.env.LIVE_ENABLED === 'true') {
+// Live FIRMS feed + forecast under /api/live (from the API_backend branch). On unless LIVE_ENABLED=false;
+// a problem in the live part (or no internet) only logs and never affects the archive API.
+if (process.env.LIVE_ENABLED !== 'false') {
   try {
     const { registerLive } = await import('./livefeed/plugin.ts');
     await registerLive(app);

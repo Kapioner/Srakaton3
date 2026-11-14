@@ -266,6 +266,26 @@ export interface LiveStatus {
   archive: { available: boolean; coverage: { satellite: string; lastDate: string }[] };
 }
 
+/** Real wind at a fire (Open-Meteo, current 10 m). */
+export interface LiveWind {
+  /** Direction the wind blows FROM, compass degrees. */
+  fromDeg: number;
+  speedKmh: number;
+  /** Direction the wind blows TO (where the fire tends to spread). */
+  towardDeg: number;
+  observedAt: string;
+  source: 'open-meteo';
+}
+
+/** SIMULATED AI land-cover classification of the burning area (prototype; no model runs). */
+export interface LiveLandCover {
+  class: 'urban' | 'forest' | 'shrubland' | 'cropland';
+  label: string;
+  confidence: number;
+  alert: 'ALARM' | 'WARNING' | 'WATCH' | 'MONITOR';
+  simulated: true;
+}
+
 /** One fire (cluster of neighbouring detections) from GET /api/live/situation. */
 export interface LiveFire {
   kind: 'fire';
@@ -278,6 +298,7 @@ export interface LiveFire {
   firstSeen: string;
   lastSeen: string;
   active: boolean;
+  landCover?: LiveLandCover;
 }
 
 export interface LiveSituation {
@@ -293,18 +314,43 @@ export interface LiveMotion {
   bearingDeg: number | null;
   growthKmh: number;
   confidence: 'low' | 'medium' | 'high';
+  /** Real wind at the fire; null when the weather service was not reachable. */
+  wind?: LiveWind | null;
 }
 
 /** GET /api/live/forecast: per fire a `track` line (observed + predicted centres) and one `forecast_area` circle per horizon. */
 export interface LiveForecast {
   type: 'FeatureCollection';
-  metadata: { generatedAt: string; method: string; lookbackHours: number; horizonsHours: number[]; fires: number; disclaimer: string };
+  metadata: {
+    generatedAt: string;
+    method: string;
+    lookbackHours: number;
+    horizonsHours: number[];
+    fires: number;
+    disclaimer: string;
+    wind?: string | null;
+    landCover?: string;
+  };
   features: (
     | { type: 'Feature'; geometry: { type: 'LineString'; coordinates: number[][] }; properties: LiveMotion & { kind: 'track'; observedPoints: number } }
     | {
         type: 'Feature';
         geometry: { type: 'Polygon'; coordinates: number[][][] };
         properties: LiveMotion & { kind: 'forecast_area'; horizonHours: number; validAt: string; radiusKm: number; center: [number, number] };
+      }
+    | {
+        type: 'Feature';
+        geometry: { type: 'Polygon' | 'LineString'; coordinates: number[][][] | number[][] };
+        /** Where the fire most likely heads (wind + observed drift): a cone per horizon, the path axis and its arrowhead. */
+        properties: LiveMotion & {
+          kind: 'spread_cone' | 'spread_axis' | 'spread_head';
+          headingDeg: number;
+          rateKmh: number;
+          halfAngleDeg: number;
+          basis: 'wind+drift' | 'wind' | 'drift';
+          horizonHours?: number;
+          reachKm?: number;
+        };
       }
   )[];
 }
