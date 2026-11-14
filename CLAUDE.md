@@ -37,6 +37,13 @@ Target users: emergency managers.
   5. **Presentation:** clear story (challenge → solution → why it matters). The guide stresses that teams often neglect this one.
 - Suggested 30 s demo story: who we are → which challenge and why → name + tagline → how it works (screenshots) → future vision.
 
+## Implementation plan
+
+The full plan (MVP scope, harmonization method v1, API contract, screen layout, phases, risks) is in [docs/PLAN.md](docs/PLAN.md). Follow it unless the user decides otherwise.
+
+- Dev data: `sample_data/<sensor>/<sensor>_<year>_Greece.csv`. MODIS covers 2000–2025, VIIRS S-NPP 2012–2025, VIIRS NOAA-20 2018–2025. NOAA-21 is not available in the FIRMS per-country archive. Download more with `node etl/scripts/download-firms.mjs`.
+- ETL output goes to `data/processed/`, which is git-ignored.
+
 ## Tech stack (decided)
 
 - **Monorepo:** `etl/`, `server/`, `web/`.
