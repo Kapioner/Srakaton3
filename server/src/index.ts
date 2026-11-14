@@ -15,6 +15,17 @@ await app.register(cors, { origin: true });
 await app.register(compress);
 await app.register(apiRoutes);
 
+// Live FIRMS feed + forecast under /api/live (from the API_backend branch). Off unless LIVE_ENABLED=true,
+// so a demo without internet, or a problem in the live part, never affects the archive API.
+if (process.env.LIVE_ENABLED === 'true') {
+  try {
+    const { registerLive } = await import('./livefeed/plugin.ts');
+    await registerLive(app);
+  } catch (err) {
+    app.log.error(`live feed disabled: ${(err as Error).message}`);
+  }
+}
+
 // In production the same process serves the built frontend (npm run build).
 const webDist = path.join(REPO_ROOT, 'web', 'dist');
 if (existsSync(webDist)) {
