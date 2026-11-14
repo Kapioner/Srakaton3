@@ -17,6 +17,8 @@ import { FireMap } from './components/FireMap.tsx';
 import { LocationsPanel } from './components/LocationsPanel.tsx';
 import { ReportCharts } from './components/ReportCharts.tsx';
 import { ALL_DATA, QueryPanel, type Query } from './components/QueryPanel.tsx';
+import { LivePanel } from './components/LivePanel.tsx';
+import type { LiveForecast, LiveSituation, LiveStatus } from '../../shared/api.ts';
 import { Scramble } from './components/Scramble.tsx';
 import { SeriesChart } from './components/SeriesChart.tsx';
 import { Sidebar } from './components/Sidebar.tsx';
@@ -60,6 +62,15 @@ export function App() {
   const [report, loadReport] = useView<ReportResponse>();
   const [grid, loadGrid] = useView<GridResponse>();
   const [mapViewState, setMapViewState] = useState<Bbox | null>(null);
+
+  // Live layer (FIRMS near-real-time, /api/live): off by default, follows the visible map area.
+  const [liveOn, setLiveOn] = useState(false);
+  const [liveStatus, setLiveStatus] = useState<LiveStatus | null>(null);
+  const [liveSituation, setLiveSituation] = useState<LiveSituation | null>(null);
+  const [liveForecast, setLiveForecast] = useState<LiveForecast | null>(null);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [liveError, setLiveError] = useState<string | null>(null);
+  const [focus, setFocus] = useState<[number, number] | null>(null);
 
   const [calendarMode, setCalendarMode] = useState<CalendarMode>('count');
   const [locations, setLocations] = useState<WatchLocation[]>(loadLocations);
@@ -126,6 +137,50 @@ export function App() {
     loadGrid(api.grid(query, ctrl.signal));
     return () => ctrl.abort();
   }, [apiReady, query, loadSummary, loadGrid]);
+
+  // Feed status: on boot and every minute (cheap). The live endpoints exist only with LIVE_ENABLED=true.
+  useEffect(() => {
+    if (!apiReady) return;
+    const load = () => api.live.status().then(setLiveStatus, () => setLiveStatus(null));
+    load();
+    const timer = setInterval(load, 60_000);
+    return () => clearInterval(timer);
+  }, [apiReady]);
+
+  // Live fires + forecast for the visible map area: after the map stops moving, and every 5 minutes.
+  const liveKey = mapViewState?.join(',') ?? 'world';
+  useEffect(() => {
+    if (!apiReady || !liveOn) return;
+    const ctrl = new AbortController();
+    const view = mapViewState;
+    // Live endpoints want a plain -180..180 box; a view wider than the world means "everywhere".
+    const bbox: Bbox | null =
+      view && view[2] - view[0] < 360
+        ? [Math.max(-180, view[0]), Math.max(-90, view[1]), Math.min(180, view[2]), Math.min(90, view[3])]
+        : null;
+    const usable = bbox && bbox[0] < bbox[2] && bbox[1] < bbox[3] ? bbox : null;
+    const load = () => {
+      setLiveLoading(true);
+      Promise.all([api.live.situation(usable, ctrl.signal), api.live.forecast(usable, ctrl.signal)])
+        .then(([s, f]) => {
+          setLiveSituation(s);
+          setLiveForecast(f);
+          setLiveError(null);
+        })
+        .catch((e: Error) => {
+          if (!isAbort(e)) setLiveError(e.message);
+        })
+        .finally(() => !ctrl.signal.aborted && setLiveLoading(false));
+    };
+    const debounce = setTimeout(load, 600);
+    const timer = setInterval(load, 5 * 60_000);
+    return () => {
+      ctrl.abort();
+      clearTimeout(debounce);
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiReady, liveOn, liveKey]);
 
   useEffect(() => saveLocations(locations), [locations]);
 
@@ -249,6 +304,8 @@ export function App() {
                 setDrawerOpen(true);
               }}
               drawerOpen={drawerOpen}
+              live={liveOn ? { situation: liveSituation, forecast: liveForecast } : null}
+              focus={focus}
             >
               {!drawerOpen && (
                 <button type="button" className="drawer-toggle" onClick={() => setDrawerOpen(true)} aria-expanded={false}>
@@ -272,6 +329,30 @@ export function App() {
               />
             </FireMap>
             {grid.error && <p className="error">Map: {grid.error}</p>}
+          </section>
+
+          <section id="live" className="block">
+            <div className="section-head">
+              <h2>
+                <span className="idx">00</span>Live: what burns now
+              </h2>
+            </div>
+            <LivePanel
+              on={liveOn}
+              onToggle={(on) => {
+                setLiveOn(on);
+                if (on) document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              status={liveStatus}
+              situation={liveSituation}
+              forecast={liveForecast}
+              loading={liveLoading}
+              error={liveError}
+              onFocus={(c) => {
+                setFocus([c[0], c[1]]);
+                document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+            />
           </section>
 
           <section className="stats" aria-label="Key numbers">

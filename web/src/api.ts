@@ -7,6 +7,9 @@ import type {
   Metric,
   PointsResponse,
   RegionsResponse,
+  LiveForecast,
+  LiveSituation,
+  LiveStatus,
   ReportResponse,
   SeriesResponse,
   SummaryResponse,
@@ -54,6 +57,11 @@ export const api = {
   report: (f: Filters, signal?: AbortSignal) => get<ReportResponse>('/api/report', { bbox: f.bbox, country: f.country }, signal),
   grid: (f: Filters, signal?: AbortSignal, res = 0.1) => get<GridResponse>('/api/grid', { ...params(f), res }, signal),
   points: (f: Filters, signal?: AbortSignal, limit = 5_000) => get<PointsResponse>('/api/points', { ...params(f), limit }, signal),
+  live: {
+    status: (signal?: AbortSignal) => get<LiveStatus>('/api/live/status', {}, signal),
+    situation: (bbox: Bbox | null, signal?: AbortSignal) => get<LiveSituation>('/api/live/situation', { bbox, hours: 24, limit: 60 }, signal),
+    forecast: (bbox: Bbox | null, signal?: AbortSignal) => get<LiveForecast>('/api/live/forecast', { bbox, limit: 60 }, signal),
+  },
   /** Link target for the CSV download button. */
   exportCsvUrl: (f: Filters) => buildUrl('/api/export.csv', params(f)),
 };

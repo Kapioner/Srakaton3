@@ -2,7 +2,7 @@ import { Crosshair, Globe2, Maximize2, Minus, Plus } from 'lucide-react';
 import * as maplibregl from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import type { Bbox, GridResponse } from '../../../shared/api.ts';
+import type { Bbox, GridResponse, LiveForecast, LiveSituation } from '../../../shared/api.ts';
 import type { WatchLocation } from '../features/locations.ts';
 import { dataColors, fireRamp, theme } from '../theme.ts';
 
@@ -26,10 +26,17 @@ interface Props {
   drawerOpen?: boolean;
   /** Overlays rendered inside the map frame (the locations drawer and its toggle). */
   children?: ReactNode;
+  /** Live layer (current fires + movement forecast); null = off. The historical grid is dimmed while it is on. */
+  live?: { situation: LiveSituation | null; forecast: LiveForecast | null } | null;
+  /** Fly to this point (e.g. a fire picked in the live list). */
+  focus?: [lon: number, lat: number] | null;
 }
 
+/** Live fires: yellow, distinct from the red-to-gold history ramp; forecast: cyan. */
+export const LIVE_COLORS = { fire: '#ffe14d', forecast: '#5ef2ff' };
+
 /** MapLibre map: harmonized fire grid (fire ramp) + the user's watch locations (violet). */
-export function FireMap({ grid, bbox, selection, onViewChange, locations, selectedId, addMode, onAdd, onSelect, drawerOpen, children }: Props) {
+export function FireMap({ grid, bbox, selection, onViewChange, locations, selectedId, addMode, onAdd, onSelect, drawerOpen, children, live: liveLayer, focus }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [ready, setReady] = useState(false);
@@ -87,6 +94,58 @@ export function FireMap({ grid, bbox, selection, onViewChange, locations, select
           'circle-stroke-color': theme.panel,
         },
       });
+      // ---- live layer: forecast areas (6/12/24 h), observed + predicted tracks, current fire outlines ----
+      instance.addSource('live-fires', { type: 'geojson', data: EMPTY });
+      instance.addSource('live-points', { type: 'geojson', data: EMPTY });
+      instance.addSource('live-forecast', { type: 'geojson', data: EMPTY });
+      instance.addLayer({
+        id: 'live-forecast-area',
+        type: 'fill',
+        source: 'live-forecast',
+        filter: ['==', ['get', 'kind'], 'forecast_area'],
+        paint: { 'fill-color': LIVE_COLORS.forecast, 'fill-opacity': ['interpolate', ['linear'], ['get', 'horizonHours'], 6, 0.16, 24, 0.05] },
+      });
+      instance.addLayer({
+        id: 'live-forecast-outline',
+        type: 'line',
+        source: 'live-forecast',
+        filter: ['==', ['get', 'kind'], 'forecast_area'],
+        paint: { 'line-color': LIVE_COLORS.forecast, 'line-width': 1, 'line-dasharray': [2, 2], 'line-opacity': 0.55 },
+      });
+      instance.addLayer({
+        id: 'live-track',
+        type: 'line',
+        source: 'live-forecast',
+        filter: ['==', ['get', 'kind'], 'track'],
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': LIVE_COLORS.forecast, 'line-width': 2.5 },
+      });
+      instance.addLayer({
+        id: 'live-fires-fill',
+        type: 'fill',
+        source: 'live-fires',
+        paint: { 'fill-color': LIVE_COLORS.fire, 'fill-opacity': 0.35 },
+      });
+      instance.addLayer({
+        id: 'live-fires-line',
+        type: 'line',
+        source: 'live-fires',
+        paint: { 'line-color': LIVE_COLORS.fire, 'line-width': 1.5 },
+      });
+      // Fire polygons are a few km wide: a marker per fire keeps them visible on the world view.
+      instance.addLayer({
+        id: 'live-points',
+        type: 'circle',
+        source: 'live-points',
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['sqrt', ['get', 'approxAreaKm2']], 0, 3, 10, 8, 40, 16],
+          'circle-color': LIVE_COLORS.fire,
+          'circle-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0.9, 9, 0.15],
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': theme.panel,
+        },
+      });
+
       instance.addLayer({
         id: 'locations-ring',
         type: 'circle',
@@ -119,7 +178,7 @@ export function FireMap({ grid, bbox, selection, onViewChange, locations, select
     instance.on('click', (e) => {
       if (live.current.addMode) live.current.onAdd(e.lngLat);
     });
-    for (const layer of ['locations', 'fires']) {
+    for (const layer of ['locations', 'fires', 'live-points']) {
       instance.on('mouseenter', layer, () => {
         if (!live.current.addMode) instance.getCanvas().style.cursor = 'pointer';
       });
@@ -138,6 +197,16 @@ export function FireMap({ grid, bbox, selection, onViewChange, locations, select
         .addTo(instance);
     });
     instance.on('mouseleave', 'fires', () => popup.remove());
+    instance.on('mousemove', 'live-points', (e) => {
+      const p = e.features?.[0]?.properties as { approxAreaKm2: number; maxFrpMw: number; lastSeen: string; detections: number } | undefined;
+      if (!p || live.current.addMode) return;
+      const ago = Math.max(0, Math.round((Date.now() - Date.parse(p.lastSeen)) / 3_600_000));
+      popup
+        .setLngLat(e.lngLat)
+        .setHTML(`<b>Active fire</b> · ~${p.approxAreaKm2} km²<br/>max FRP ${p.maxFrpMw} MW · ${p.detections} detections<br/>last seen ${ago} h ago`)
+        .addTo(instance);
+    });
+    instance.on('mouseleave', 'live-points', () => popup.remove());
     const reportView = () => {
       const b = instance.getBounds();
       live.current.onViewChange?.([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].map((v) => Math.round(v * 1000) / 1000) as Bbox);
@@ -220,13 +289,36 @@ export function FireMap({ grid, bbox, selection, onViewChange, locations, select
 
   useEffect(() => {
     const m = map.current;
+    if (!ready || !m) return;
+    (m.getSource('live-fires') as maplibregl.GeoJSONSource).setData((liveLayer?.situation as unknown as FeatureCollection) ?? EMPTY);
+    (m.getSource('live-points') as maplibregl.GeoJSONSource).setData({
+      type: 'FeatureCollection',
+      features: (liveLayer?.situation?.features ?? []).map((f) => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: f.properties.centroid },
+        properties: f.properties as unknown as Record<string, unknown>,
+      })),
+    });
+    (m.getSource('live-forecast') as maplibregl.GeoJSONSource).setData((liveLayer?.forecast as unknown as FeatureCollection) ?? EMPTY);
+    // History steps back while the live picture is shown, and coarse cells (1 deg on the world view) fade out
+    // once they are bigger than ~40 px on screen, so they do not cover the fires the live layer zooms to.
+    const res = grid?.query.res ?? 0.1;
+    const fadeZoom = Math.log2(40 / (0.45 * res * (512 / 360)));
+    const dimmed: maplibregl.ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], fadeZoom, 0.3, fadeZoom + 1, 0];
+    m.setPaintProperty('fires', 'circle-opacity', liveLayer ? dimmed : addMode ? 0.25 : 0.9);
+    m.setPaintProperty('fires-glow', 'circle-opacity', liveLayer || addMode ? 0.03 : 0.12);
+  }, [liveLayer, ready, addMode, grid]);
+
+  useEffect(() => {
+    if (focus) map.current?.flyTo({ center: focus, zoom: Math.max(map.current.getZoom(), 8), duration: 900 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.join(',')]);
+
+  useEffect(() => {
+    const m = map.current;
     if (!m) return;
     m.getCanvas().style.cursor = addMode ? 'crosshair' : '';
-    if (ready) {
-      m.setPaintProperty('fires', 'circle-opacity', addMode ? 0.25 : 0.9);
-      m.setPaintProperty('fires-glow', 'circle-opacity', addMode ? 0.03 : 0.12);
-    }
-  }, [addMode, ready]);
+  }, [addMode]);
 
   const resetView = () => {
     if (bbox) map.current?.fitBounds([bbox[0], bbox[1], bbox[2], bbox[3]], { padding: 40, duration: 900 });

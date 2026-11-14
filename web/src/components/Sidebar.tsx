@@ -1,4 +1,4 @@
-import { Activity, CalendarDays, FileBarChart, FlaskConical, Map as MapIcon } from 'lucide-react';
+import { Activity, CalendarDays, FileBarChart, FlaskConical, Map as MapIcon, Radio } from 'lucide-react';
 import type { MetaResponse } from '../../../shared/api.ts';
 import { dataColors } from '../theme.ts';
 import { Clock } from './Clock.tsx';
@@ -12,6 +12,7 @@ interface Props {
 
 const NAV = [
   { href: '#map', label: 'Map', icon: MapIcon },
+  { href: '#live', label: 'Live', icon: Radio },
   { href: '#calendar', label: 'Calendar', icon: CalendarDays },
   { href: '#series', label: 'Sensors', icon: Activity },
   { href: '#report', label: 'Report', icon: FileBarChart },

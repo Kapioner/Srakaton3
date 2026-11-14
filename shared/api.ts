@@ -254,3 +254,57 @@ export const EXPORT_COLUMNS = [
   'version',
   'country',
 ] as const;
+
+// ---- /api/live/* (near-real-time FIRMS feed, server/src/livefeed) ----------------------------------------
+// Live endpoints take bbox=west,south,east,north within +-180/+-90 (no country filter).
+
+export interface LiveStatus {
+  mode: { mode: 'realtime' | 'archive' | 'forecast'; acquiring: boolean; since: string; resumeAt: string | null };
+  running: boolean;
+  lastRun: { startedAt: string; finishedAt: string; status: 'ok' | 'partial' | 'failed'; inserted: number } | null;
+  live: { liveHotspots: number; oldestAcquisition: string | null; latestAcquisition: string | null };
+  archive: { available: boolean; coverage: { satellite: string; lastDate: string }[] };
+}
+
+/** One fire (cluster of neighbouring detections) from GET /api/live/situation. */
+export interface LiveFire {
+  kind: 'fire';
+  clusterId: string;
+  centroid: [lon: number, lat: number];
+  activeCells: number;
+  approxAreaKm2: number;
+  detections: number;
+  maxFrpMw: number;
+  firstSeen: string;
+  lastSeen: string;
+  active: boolean;
+}
+
+export interface LiveSituation {
+  type: 'FeatureCollection';
+  metadata: { generatedAt: string; lookbackHours: number; fires: number };
+  features: { type: 'Feature'; geometry: { type: 'Polygon'; coordinates: number[][][] }; properties: LiveFire }[];
+}
+
+export interface LiveMotion {
+  clusterId: string;
+  speedKmh: number;
+  /** Compass degrees; null = no measurable drift. */
+  bearingDeg: number | null;
+  growthKmh: number;
+  confidence: 'low' | 'medium' | 'high';
+}
+
+/** GET /api/live/forecast: per fire a `track` line (observed + predicted centres) and one `forecast_area` circle per horizon. */
+export interface LiveForecast {
+  type: 'FeatureCollection';
+  metadata: { generatedAt: string; method: string; lookbackHours: number; horizonsHours: number[]; fires: number; disclaimer: string };
+  features: (
+    | { type: 'Feature'; geometry: { type: 'LineString'; coordinates: number[][] }; properties: LiveMotion & { kind: 'track'; observedPoints: number } }
+    | {
+        type: 'Feature';
+        geometry: { type: 'Polygon'; coordinates: number[][][] };
+        properties: LiveMotion & { kind: 'forecast_area'; horizonHours: number; validAt: string; radiusKm: number; center: [number, number] };
+      }
+  )[];
+}
