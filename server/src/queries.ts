@@ -14,12 +14,14 @@ import type {
   Metric,
   MonthBaseline,
   PointsResponse,
+  ReportResponse,
   SeriesResponse,
   SummaryResponse,
 } from '../../shared/api.ts';
 import { EXPORT_COLUMNS, FIRE_UNIT } from '../../shared/api.ts';
-import { config, fwd } from './config.ts';
+import { config, fwd, paths } from './config.ts';
 import { getMeta } from './dataset.ts';
+import { existsSync } from 'node:fs';
 import { exec, query } from './db.ts';
 import { BadRequest, type CommonParams } from './params.ts';
 
@@ -342,4 +344,62 @@ export async function exportCsv(p: CommonParams): Promise<{ stream: Readable; fi
   stream.on('close', cleanup);
   stream.on('error', cleanup);
   return { stream, filename: `hotspots_${f.from}_${f.to}.csv`, cap };
+}
+
+// ---- /api/report --------------------------------------------------------------------------------------
+
+/**
+ * Report data for a region. `hotspots` / `calibration` are table expressions so the fixtures script can
+ * run the same SQL on read_parquet(...) directly.
+ */
+export async function buildReport(hotspots: string, calibration: string | null, bbox: Bbox | null, timeoutMs?: number) {
+  const where = bbox ? `WHERE longitude BETWEEN ${bbox[0]} AND ${bbox[2]} AND latitude BETWEEN ${bbox[1]} AND ${bbox[3]}` : '';
+  const rows = await query(
+    `SELECT year::INT AS y, satellite AS s, type::INT AS t, count(*) AS n FROM ${hotspots} ${where} GROUP BY ALL ORDER BY ALL`,
+    timeoutMs,
+  );
+  const sat = new Map<string, { year: number; satellite: ReportResponse['rawBySatellite'][number]['satellite']; n: number }>();
+  const typ = new Map<string, { year: number; type: number; n: number }>();
+  for (const r of rows) {
+    const year = Number(r.y);
+    const n = Number(r.n);
+    const ks = `${year}|${r.s}`;
+    const kt = `${year}|${r.t}`;
+    sat.set(ks, { year, satellite: r.s as ReportResponse['rawBySatellite'][number]['satellite'], n: (sat.get(ks)?.n ?? 0) + n });
+    typ.set(kt, { year, type: Number(r.t), n: (typ.get(kt)?.n ?? 0) + n });
+  }
+  const calib = calibration
+    ? await query(`SELECT satellite, cls::INT AS cls, avg(k) AS k, sum(n_sat) AS ns, sum(n_ref) AS nr FROM ${calibration} WHERE k IS NOT NULL GROUP BY ALL ORDER BY ALL`)
+    : [];
+  return {
+    rawBySatellite: [...sat.values()],
+    byType: [...typ.values()],
+    calibration: calib.map((r) => ({
+      satellite: r.satellite as ReportResponse['calibration'][number]['satellite'],
+      cls: Number(r.cls),
+      k: Math.round(Number(r.k) * 1000) / 1000,
+      nSat: Number(r.ns),
+      nRef: Number(r.nr),
+    })),
+  };
+}
+
+// Full scans of the hotspots table: cache per region until the dataset changes (meta is rebuilt then).
+const reportCache = new Map<string, Promise<ReportResponse>>();
+
+export async function report(p: CommonParams): Promise<ReportResponse> {
+  const meta = await getMeta();
+  const key = `${meta.dateRange.from}|${meta.dateRange.to}|${meta.countries.length}|${p.bbox?.join(',') ?? 'all'}`;
+  let hit = reportCache.get(key);
+  if (!hit) {
+    hit = (async () => {
+      const calib = existsSync(paths.calibrationFile) ? `read_parquet('${fwd(paths.calibrationFile)}')` : null;
+      const body = await buildReport('hotspots', calib, p.bbox, Math.max(config.limits.queryTimeoutMs, 120_000));
+      return { query: { bbox: p.bbox }, ...body, frpEdges: meta.harmonization.frpEdges, reference: meta.harmonization.reference };
+    })();
+    hit.catch(() => reportCache.delete(key));
+    if (reportCache.size > 30) reportCache.delete(reportCache.keys().next().value!);
+    reportCache.set(key, hit);
+  }
+  return hit;
 }

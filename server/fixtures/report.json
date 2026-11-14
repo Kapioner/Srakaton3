@@ -1,0 +1,843 @@
+{
+ "query": {
+  "bbox": null
+ },
+ "rawBySatellite": [
+  {
+   "year": 2000,
+   "satellite": "Terra",
+   "n": 92
+  },
+  {
+   "year": 2001,
+   "satellite": "Terra",
+   "n": 1840
+  },
+  {
+   "year": 2002,
+   "satellite": "Aqua",
+   "n": 470
+  },
+  {
+   "year": 2002,
+   "satellite": "Terra",
+   "n": 414
+  },
+  {
+   "year": 2003,
+   "satellite": "Aqua",
+   "n": 880
+  },
+  {
+   "year": 2003,
+   "satellite": "Terra",
+   "n": 748
+  },
+  {
+   "year": 2004,
+   "satellite": "Aqua",
+   "n": 1200
+  },
+  {
+   "year": 2004,
+   "satellite": "Terra",
+   "n": 924
+  },
+  {
+   "year": 2005,
+   "satellite": "Aqua",
+   "n": 1058
+  },
+  {
+   "year": 2005,
+   "satellite": "Terra",
+   "n": 762
+  },
+  {
+   "year": 2006,
+   "satellite": "Aqua",
+   "n": 910
+  },
+  {
+   "year": 2006,
+   "satellite": "Terra",
+   "n": 517
+  },
+  {
+   "year": 2007,
+   "satellite": "Aqua",
+   "n": 3072
+  },
+  {
+   "year": 2007,
+   "satellite": "Terra",
+   "n": 3113
+  },
+  {
+   "year": 2008,
+   "satellite": "Aqua",
+   "n": 1604
+  },
+  {
+   "year": 2008,
+   "satellite": "Terra",
+   "n": 1125
+  },
+  {
+   "year": 2009,
+   "satellite": "Aqua",
+   "n": 1037
+  },
+  {
+   "year": 2009,
+   "satellite": "Terra",
+   "n": 768
+  },
+  {
+   "year": 2010,
+   "satellite": "Aqua",
+   "n": 479
+  },
+  {
+   "year": 2010,
+   "satellite": "Terra",
+   "n": 451
+  },
+  {
+   "year": 2011,
+   "satellite": "Aqua",
+   "n": 1623
+  },
+  {
+   "year": 2011,
+   "satellite": "Terra",
+   "n": 1032
+  },
+  {
+   "year": 2012,
+   "satellite": "Aqua",
+   "n": 1185
+  },
+  {
+   "year": 2012,
+   "satellite": "S-NPP",
+   "n": 9264
+  },
+  {
+   "year": 2012,
+   "satellite": "Terra",
+   "n": 971
+  },
+  {
+   "year": 2013,
+   "satellite": "Aqua",
+   "n": 998
+  },
+  {
+   "year": 2013,
+   "satellite": "S-NPP",
+   "n": 7368
+  },
+  {
+   "year": 2013,
+   "satellite": "Terra",
+   "n": 818
+  },
+  {
+   "year": 2014,
+   "satellite": "Aqua",
+   "n": 735
+  },
+  {
+   "year": 2014,
+   "satellite": "S-NPP",
+   "n": 5980
+  },
+  {
+   "year": 2014,
+   "satellite": "Terra",
+   "n": 627
+  },
+  {
+   "year": 2015,
+   "satellite": "Aqua",
+   "n": 782
+  },
+  {
+   "year": 2015,
+   "satellite": "S-NPP",
+   "n": 6050
+  },
+  {
+   "year": 2015,
+   "satellite": "Terra",
+   "n": 540
+  },
+  {
+   "year": 2016,
+   "satellite": "Aqua",
+   "n": 943
+  },
+  {
+   "year": 2016,
+   "satellite": "S-NPP",
+   "n": 7642
+  },
+  {
+   "year": 2016,
+   "satellite": "Terra",
+   "n": 734
+  },
+  {
+   "year": 2017,
+   "satellite": "Aqua",
+   "n": 807
+  },
+  {
+   "year": 2017,
+   "satellite": "S-NPP",
+   "n": 6153
+  },
+  {
+   "year": 2017,
+   "satellite": "Terra",
+   "n": 706
+  },
+  {
+   "year": 2018,
+   "satellite": "Aqua",
+   "n": 481
+  },
+  {
+   "year": 2018,
+   "satellite": "NOAA-20",
+   "n": 3507
+  },
+  {
+   "year": 2018,
+   "satellite": "S-NPP",
+   "n": 4015
+  },
+  {
+   "year": 2018,
+   "satellite": "Terra",
+   "n": 358
+  },
+  {
+   "year": 2019,
+   "satellite": "Aqua",
+   "n": 647
+  },
+  {
+   "year": 2019,
+   "satellite": "NOAA-20",
+   "n": 5151
+  },
+  {
+   "year": 2019,
+   "satellite": "S-NPP",
+   "n": 4962
+  },
+  {
+   "year": 2019,
+   "satellite": "Terra",
+   "n": 387
+  },
+  {
+   "year": 2020,
+   "satellite": "Aqua",
+   "n": 680
+  },
+  {
+   "year": 2020,
+   "satellite": "NOAA-20",
+   "n": 4717
+  },
+  {
+   "year": 2020,
+   "satellite": "S-NPP",
+   "n": 4503
+  },
+  {
+   "year": 2020,
+   "satellite": "Terra",
+   "n": 473
+  },
+  {
+   "year": 2021,
+   "satellite": "Aqua",
+   "n": 1384
+  },
+  {
+   "year": 2021,
+   "satellite": "NOAA-20",
+   "n": 11061
+  },
+  {
+   "year": 2021,
+   "satellite": "S-NPP",
+   "n": 10552
+  },
+  {
+   "year": 2021,
+   "satellite": "Terra",
+   "n": 1097
+  },
+  {
+   "year": 2022,
+   "satellite": "Aqua",
+   "n": 644
+  },
+  {
+   "year": 2022,
+   "satellite": "NOAA-20",
+   "n": 5031
+  },
+  {
+   "year": 2022,
+   "satellite": "S-NPP",
+   "n": 4566
+  },
+  {
+   "year": 2022,
+   "satellite": "Terra",
+   "n": 503
+  },
+  {
+   "year": 2023,
+   "satellite": "Aqua",
+   "n": 1749
+  },
+  {
+   "year": 2023,
+   "satellite": "NOAA-20",
+   "n": 10648
+  },
+  {
+   "year": 2023,
+   "satellite": "S-NPP",
+   "n": 10475
+  },
+  {
+   "year": 2023,
+   "satellite": "Terra",
+   "n": 1513
+  },
+  {
+   "year": 2024,
+   "satellite": "Aqua",
+   "n": 758
+  },
+  {
+   "year": 2024,
+   "satellite": "NOAA-20",
+   "n": 5271
+  },
+  {
+   "year": 2024,
+   "satellite": "S-NPP",
+   "n": 4630
+  },
+  {
+   "year": 2024,
+   "satellite": "Terra",
+   "n": 523
+  },
+  {
+   "year": 2025,
+   "satellite": "Aqua",
+   "n": 652
+  },
+  {
+   "year": 2025,
+   "satellite": "NOAA-20",
+   "n": 4177
+  },
+  {
+   "year": 2025,
+   "satellite": "S-NPP",
+   "n": 4282
+  },
+  {
+   "year": 2025,
+   "satellite": "Terra",
+   "n": 536
+  }
+ ],
+ "byType": [
+  {
+   "year": 2000,
+   "type": 0,
+   "n": 92
+  },
+  {
+   "year": 2001,
+   "type": 0,
+   "n": 1835
+  },
+  {
+   "year": 2001,
+   "type": 3,
+   "n": 5
+  },
+  {
+   "year": 2002,
+   "type": 0,
+   "n": 879
+  },
+  {
+   "year": 2002,
+   "type": 3,
+   "n": 5
+  },
+  {
+   "year": 2003,
+   "type": 0,
+   "n": 1625
+  },
+  {
+   "year": 2003,
+   "type": 3,
+   "n": 3
+  },
+  {
+   "year": 2004,
+   "type": 0,
+   "n": 2116
+  },
+  {
+   "year": 2004,
+   "type": 3,
+   "n": 8
+  },
+  {
+   "year": 2005,
+   "type": 0,
+   "n": 1815
+  },
+  {
+   "year": 2005,
+   "type": 3,
+   "n": 5
+  },
+  {
+   "year": 2006,
+   "type": 0,
+   "n": 1411
+  },
+  {
+   "year": 2006,
+   "type": 3,
+   "n": 16
+  },
+  {
+   "year": 2007,
+   "type": 0,
+   "n": 6161
+  },
+  {
+   "year": 2007,
+   "type": 3,
+   "n": 24
+  },
+  {
+   "year": 2008,
+   "type": 0,
+   "n": 2715
+  },
+  {
+   "year": 2008,
+   "type": 3,
+   "n": 14
+  },
+  {
+   "year": 2009,
+   "type": 0,
+   "n": 1790
+  },
+  {
+   "year": 2009,
+   "type": 3,
+   "n": 15
+  },
+  {
+   "year": 2010,
+   "type": 0,
+   "n": 910
+  },
+  {
+   "year": 2010,
+   "type": 3,
+   "n": 20
+  },
+  {
+   "year": 2011,
+   "type": 0,
+   "n": 2651
+  },
+  {
+   "year": 2011,
+   "type": 3,
+   "n": 4
+  },
+  {
+   "year": 2012,
+   "type": 0,
+   "n": 10018
+  },
+  {
+   "year": 2012,
+   "type": 3,
+   "n": 300
+  },
+  {
+   "year": 2012,
+   "type": 2,
+   "n": 1102
+  },
+  {
+   "year": 2013,
+   "type": 0,
+   "n": 7738
+  },
+  {
+   "year": 2013,
+   "type": 3,
+   "n": 167
+  },
+  {
+   "year": 2013,
+   "type": 2,
+   "n": 1279
+  },
+  {
+   "year": 2014,
+   "type": 0,
+   "n": 5863
+  },
+  {
+   "year": 2014,
+   "type": 3,
+   "n": 158
+  },
+  {
+   "year": 2014,
+   "type": 2,
+   "n": 1321
+  },
+  {
+   "year": 2015,
+   "type": 0,
+   "n": 5947
+  },
+  {
+   "year": 2015,
+   "type": 2,
+   "n": 1235
+  },
+  {
+   "year": 2015,
+   "type": 3,
+   "n": 190
+  },
+  {
+   "year": 2016,
+   "type": 0,
+   "n": 7894
+  },
+  {
+   "year": 2016,
+   "type": 3,
+   "n": 213
+  },
+  {
+   "year": 2016,
+   "type": 2,
+   "n": 1212
+  },
+  {
+   "year": 2017,
+   "type": 0,
+   "n": 6224
+  },
+  {
+   "year": 2017,
+   "type": 2,
+   "n": 1256
+  },
+  {
+   "year": 2017,
+   "type": 3,
+   "n": 186
+  },
+  {
+   "year": 2018,
+   "type": 0,
+   "n": 6079
+  },
+  {
+   "year": 2018,
+   "type": 2,
+   "n": 1969
+  },
+  {
+   "year": 2018,
+   "type": 3,
+   "n": 313
+  },
+  {
+   "year": 2019,
+   "type": 0,
+   "n": 8652
+  },
+  {
+   "year": 2019,
+   "type": 2,
+   "n": 2151
+  },
+  {
+   "year": 2019,
+   "type": 3,
+   "n": 344
+  },
+  {
+   "year": 2020,
+   "type": 0,
+   "n": 8534
+  },
+  {
+   "year": 2020,
+   "type": 2,
+   "n": 1689
+  },
+  {
+   "year": 2020,
+   "type": 3,
+   "n": 150
+  },
+  {
+   "year": 2021,
+   "type": 0,
+   "n": 21968
+  },
+  {
+   "year": 2021,
+   "type": 2,
+   "n": 1780
+  },
+  {
+   "year": 2021,
+   "type": 3,
+   "n": 346
+  },
+  {
+   "year": 2022,
+   "type": 0,
+   "n": 8971
+  },
+  {
+   "year": 2022,
+   "type": 2,
+   "n": 1645
+  },
+  {
+   "year": 2022,
+   "type": 3,
+   "n": 128
+  },
+  {
+   "year": 2023,
+   "type": 0,
+   "n": 23057
+  },
+  {
+   "year": 2023,
+   "type": 2,
+   "n": 1209
+  },
+  {
+   "year": 2023,
+   "type": 3,
+   "n": 119
+  },
+  {
+   "year": 2024,
+   "type": 0,
+   "n": 9729
+  },
+  {
+   "year": 2024,
+   "type": 2,
+   "n": 1359
+  },
+  {
+   "year": 2024,
+   "type": 3,
+   "n": 94
+  },
+  {
+   "year": 2025,
+   "type": 0,
+   "n": 8485
+  },
+  {
+   "year": 2025,
+   "type": 2,
+   "n": 1089
+  },
+  {
+   "year": 2025,
+   "type": 3,
+   "n": 73
+  }
+ ],
+ "calibration": [
+  {
+   "satellite": "Aqua",
+   "cls": 0,
+   "k": 1,
+   "nSat": 1399,
+   "nRef": 1399
+  },
+  {
+   "satellite": "Aqua",
+   "cls": 1,
+   "k": 1,
+   "nSat": 5040,
+   "nRef": 5040
+  },
+  {
+   "satellite": "Aqua",
+   "cls": 2,
+   "k": 1,
+   "nSat": 4625,
+   "nRef": 4625
+  },
+  {
+   "satellite": "Aqua",
+   "cls": 3,
+   "k": 1,
+   "nSat": 3063,
+   "nRef": 3063
+  },
+  {
+   "satellite": "Aqua",
+   "cls": 4,
+   "k": 1,
+   "nSat": 5345,
+   "nRef": 5345
+  },
+  {
+   "satellite": "NOAA-20",
+   "cls": 0,
+   "k": 30.843,
+   "nSat": 10795,
+   "nRef": 350
+  },
+  {
+   "satellite": "NOAA-20",
+   "cls": 1,
+   "k": 3.019,
+   "nSat": 3411,
+   "nRef": 1130
+  },
+  {
+   "satellite": "NOAA-20",
+   "cls": 2,
+   "k": 1.994,
+   "nSat": 1868,
+   "nRef": 937
+  },
+  {
+   "satellite": "NOAA-20",
+   "cls": 3,
+   "k": 1.541,
+   "nSat": 1031,
+   "nRef": 669
+  },
+  {
+   "satellite": "NOAA-20",
+   "cls": 4,
+   "k": 1.166,
+   "nSat": 2070,
+   "nRef": 1776
+  },
+  {
+   "satellite": "S-NPP",
+   "cls": 0,
+   "k": 31.768,
+   "nSat": 21253,
+   "nRef": 669
+  },
+  {
+   "satellite": "S-NPP",
+   "cls": 1,
+   "k": 3.215,
+   "nSat": 7513,
+   "nRef": 2337
+  },
+  {
+   "satellite": "S-NPP",
+   "cls": 2,
+   "k": 1.929,
+   "nSat": 4131,
+   "nRef": 2142
+  },
+  {
+   "satellite": "S-NPP",
+   "cls": 3,
+   "k": 1.462,
+   "nSat": 2105,
+   "nRef": 1440
+  },
+  {
+   "satellite": "S-NPP",
+   "cls": 4,
+   "k": 1.182,
+   "nSat": 3389,
+   "nRef": 2866
+  },
+  {
+   "satellite": "Terra",
+   "cls": 0,
+   "k": 0.625,
+   "nSat": 874,
+   "nRef": 1399
+  },
+  {
+   "satellite": "Terra",
+   "cls": 1,
+   "k": 0.777,
+   "nSat": 3914,
+   "nRef": 5039
+  },
+  {
+   "satellite": "Terra",
+   "cls": 2,
+   "k": 0.752,
+   "nSat": 3475,
+   "nRef": 4623
+  },
+  {
+   "satellite": "Terra",
+   "cls": 3,
+   "k": 0.764,
+   "nSat": 2340,
+   "nRef": 3063
+  },
+  {
+   "satellite": "Terra",
+   "cls": 4,
+   "k": 0.775,
+   "nSat": 4139,
+   "nRef": 5344
+  }
+ ],
+ "frpEdges": [
+  5,
+  10,
+  20,
+  40
+ ],
+ "reference": "Aqua"
+}

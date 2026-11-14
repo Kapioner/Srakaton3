@@ -7,6 +7,7 @@ import type {
   Metric,
   PointsResponse,
   RegionsResponse,
+  ReportResponse,
   SeriesResponse,
   SummaryResponse,
 } from '../../shared/api.ts';
@@ -48,6 +49,7 @@ export const api = {
   summary: (f: Filters, signal?: AbortSignal) => get<SummaryResponse>('/api/summary', params(f), signal),
   series: (f: Filters, signal?: AbortSignal, by: 'year' | 'month' = 'year') =>
     get<SeriesResponse>('/api/series', { ...params(f), by }, signal),
+  report: (f: Filters, signal?: AbortSignal) => get<ReportResponse>('/api/report', { bbox: f.bbox }, signal),
   grid: (f: Filters, signal?: AbortSignal, res = 0.1) => get<GridResponse>('/api/grid', { ...params(f), res }, signal),
   points: (f: Filters, signal?: AbortSignal, limit = 5_000) => get<PointsResponse>('/api/points', { ...params(f), limit }, signal),
   /** Link target for the CSV download button. */

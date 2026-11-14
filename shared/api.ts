@@ -163,6 +163,22 @@ export interface GridResponse {
   features: GridFeature[];
 }
 
+// ---- GET /api/report ---------------------------------------------------------
+// The ETL report on the page: what the raw data looks like before harmonization, what the type filter
+// removes, and the calibration factors. Region filter (bbox) only: it always covers all years.
+
+export interface ReportResponse {
+  query: { bbox: Bbox | null };
+  /** All detections (every type) per year and satellite: shows the jumps when satellites are added. */
+  rawBySatellite: { year: number; satellite: Satellite; n: number }[];
+  /** Detections per year and FIRMS type: 0 vegetation fire (kept), 1 volcano, 2 static land source, 3 offshore. */
+  byType: { year: number; type: number; n: number }[];
+  /** k = fire cell-days of a satellite per cell-day of the reference, per FRP class. */
+  calibration: { satellite: Satellite; cls: number; k: number; nSat: number; nRef: number }[];
+  frpEdges: number[];
+  reference: Satellite;
+}
+
 // ---- GET /api/regions --------------------------------------------------------
 // Countries present in the dataset, with the extent of their fire activity (for the region picker).
 

@@ -7,6 +7,7 @@ import type {
   HealthResponse,
   MetaResponse,
   Region,
+  ReportResponse,
   SeriesResponse,
   SummaryResponse,
 } from '../../shared/api.ts';
@@ -14,6 +15,7 @@ import { api, isAbort } from './api.ts';
 import { Calendar, type CalendarMode } from './components/Calendar.tsx';
 import { FireMap } from './components/FireMap.tsx';
 import { LocationsPanel } from './components/LocationsPanel.tsx';
+import { ReportCharts } from './components/ReportCharts.tsx';
 import { ALL_DATA, QueryPanel, type Query } from './components/QueryPanel.tsx';
 import { Scramble } from './components/Scramble.tsx';
 import { SeriesChart } from './components/SeriesChart.tsx';
@@ -55,6 +57,7 @@ export function App() {
   const [calendar, loadCalendar] = useView<CalendarResponse>();
   const [summary, loadSummary] = useView<SummaryResponse>();
   const [series, loadSeries] = useView<SeriesResponse>();
+  const [report, loadReport] = useView<ReportResponse>();
   const [grid, loadGrid] = useView<GridResponse>();
   const [mapViewState, setMapViewState] = useState<Bbox | null>(null);
 
@@ -92,9 +95,10 @@ export function App() {
     const region = { bbox: query.bbox };
     loadCalendar(api.calendar(region, ctrl.signal));
     loadSeries(api.series(region, ctrl.signal));
+    loadReport(api.report(region, ctrl.signal));
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [regionKey, loadCalendar, loadSeries]);
+  }, [regionKey, loadCalendar, loadSeries, loadReport]);
 
   // Map and summary follow the full query (region + dates). A new query aborts the previous requests.
   useEffect(() => {
@@ -175,11 +179,11 @@ export function App() {
                 Harmonized MODIS + VIIRS hotspots
               </div>
               <h1 className="headline">
-                <Scramble text={`${span} years of fire.`} delay={150} /> <Scramble text="One calendar." delay={450} />
+                <Scramble text={`${span} years of fire on one calendar.`} delay={150} />
               </h1>
             </div>
             <p className="lede">
-              Active-fire detections over {datasetName}, harmonized so the sensor no longer matters. Pick a region and a
+              Active-fire detections over {datasetName}, <i><b>harmonized</b></i> so the sensor no longer matters. Pick a region and a
               period: see which months burn, which years were worst, and how this period compares.
             </p>
           </section>
@@ -322,10 +326,26 @@ export function App() {
             </div>
           </section>
 
+          <section id="report" className="block">
+            <div className="section-head">
+              <h2>
+                <span className="idx">03</span>Harmonization report
+              </h2>
+              <span className="label dim">same as npm run etl:report · {query.label === ALL_DATA.label ? datasetName : query.label}</span>
+            </div>
+            <div className={report.loading ? 'is-loading' : ''}>
+              {report.data ? (
+                <ReportCharts report={report.data} series={series.data} />
+              ) : (
+                <p className={report.error ? 'error' : 'loading'}>{report.error ?? 'Loading report'}</p>
+              )}
+            </div>
+          </section>
+
           <section id="method" className="block method">
             <div className="section-head">
               <h2>
-                <span className="idx">03</span>Method
+                <span className="idx">04</span>Method
               </h2>
             </div>
             <ul className="tags">

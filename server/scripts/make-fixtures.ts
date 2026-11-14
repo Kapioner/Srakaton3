@@ -10,6 +10,7 @@ import path from 'node:path';
 import { EXPORT_COLUMNS, FIRE_UNIT, type CalibrationFactor, type MetaResponse } from '../../shared/api.ts';
 import { calibrationFile, config, parquetGlob, REPO_ROOT } from '../src/config.ts';
 import { query } from '../src/db.ts';
+import { buildReport } from '../src/queries.ts';
 
 const OUT = path.join(REPO_ROOT, 'server', 'fixtures');
 const HZ = `read_parquet('${parquetGlob('harmonized')}', hive_partitioning = true)`;
@@ -183,3 +184,11 @@ await query(`
         WHERE type = 0 AND acq_date = '${P.from}' ORDER BY acq_time, latitude LIMIT 200)
   TO '${csvFile}' (HEADER)`);
 console.log('export.csv     200 rows');
+
+// ---- report (whole dataset) ----
+await dump('report.json', {
+  query: { bbox: null },
+  ...(await buildReport(HS, `read_parquet('${calibrationFile}')`, null)),
+  frpEdges: params.frpEdges,
+  reference: params.reference,
+});

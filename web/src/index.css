@@ -1281,3 +1281,87 @@ button {
   left: calc((100% - min(320px, 88%)) / 2);
   max-width: calc(100% - min(320px, 88%) - 24px);
 }
+
+/* ---- harmonization report (same content as npm run etl:report) ---------------------------------- */
+
+.report-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--red-faint);
+  border-bottom: 1px solid var(--red-faint);
+  margin: 6px 0 8px;
+}
+
+.report-kpis .stat b {
+  display: block;
+  font-size: clamp(18px, 1.8vw, 24px);
+  font-weight: 400;
+  margin-top: 6px;
+  color: var(--red);
+}
+
+.report-title {
+  margin: 26px 0 4px;
+  color: var(--bone);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.k-table {
+  border-collapse: collapse;
+  font: 14px/1.4 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.k-table th,
+.k-table td {
+  border: 1px solid var(--red-faint);
+  padding: 7px 14px;
+  text-align: right;
+}
+
+.k-table th {
+  font: 500 12.5px/1.4 var(--sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--red-dim);
+}
+
+.k-table td {
+  color: var(--bone);
+}
+
+.k-table th:first-child,
+.k-table td:first-child {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.k-table .layer-swatch {
+  display: inline-block;
+  vertical-align: -1px;
+  margin-right: 6px;
+}
+
+.is-loading {
+  opacity: 0.55;
+  transition: opacity 0.2s;
+}
+
+@media (max-width: 640px) {
+  .report-kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .report-kpis .stat + .stat {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--red-faint);
+  }
+}

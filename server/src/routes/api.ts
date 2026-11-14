@@ -92,6 +92,11 @@ export async function apiRoutes(app: FastifyInstance) {
     return serve(reply, 'series.json', () => q.series(p, by));
   });
 
+  app.get('/api/report', async (req, reply) => {
+    const p = parseCommon(req.query as Record<string, unknown>);
+    return serve(reply, 'report.json', () => q.report(p));
+  });
+
   app.get('/api/grid', async (req, reply) => {
     const raw = req.query as Record<string, unknown>;
     const p = parseCommon(raw);
