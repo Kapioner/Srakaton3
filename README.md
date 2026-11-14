@@ -47,7 +47,7 @@ Configuration: copy `.env.example` to `.env`; the ETL and the API both read it. 
 
 FRP-stratified, multi-satellite calibration to an Aqua-equivalent fire cell-day. Every satellite's detections are counted as fire cell-days on a 0.02 deg grid, split into five fire-size classes by FRP, and scaled by a per-satellite, per-class factor fitted against MODIS Aqua over their common period. The harmonized value `h` is stored per 0.1 deg cell and day, together with MODIS-only and VIIRS-only estimates. On Greece 2012-2025 these two independent estimates agree within about 6 % per year. Details: `etl/src/harmonization.ts`.
 
-## Data
+## Data.
 
 NASA FIRMS active fire archive, per-country yearly CSVs: MODIS Collection 6.1 (Terra, Aqua) and VIIRS 375 m (Suomi NPP, NOAA-20).
 https://firms.modaps.eosdis.nasa.gov/country/
