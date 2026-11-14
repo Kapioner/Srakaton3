@@ -47,8 +47,11 @@ export const dataColors = {
  */
 export const fireRamp = ['#1d1718', '#3a1029', '#6b1238', '#a8133a', '#f91133', '#ff6a2b', '#ffb020', '#ffe7a3'];
 
-/** Diverging ramp for anomaly vs long-term mean: below normal (sky) -> normal (dark) -> above normal (red/gold). */
-export const anomalyRamp = ['#4cc9f0', '#1f5d70', '#2a2426', '#a8133a', '#f91133', '#ffb020'];
+/**
+ * Diverging ramp for anomaly vs long-term mean: below normal (muted blue) -> normal (dark) -> above normal (red/gold).
+ * Quiet months stay dim on purpose: emergency managers look for the worse-than-normal months, which get the bright end.
+ */
+export const anomalyRamp = ['#2d6a80', '#1d4250', '#2a2426', '#a8133a', '#f91133', '#ffb020'];
 
 /** Base ECharts tooltip in the house style. */
 export const tooltipStyle = {

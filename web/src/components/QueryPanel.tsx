@@ -89,7 +89,7 @@ export function QueryPanel({ meta, regions, query, mapView, busy, onApply }: Pro
             {regions.map((r) => (
               <option key={r.country}>{r.country}</option>
             ))}
-            {region === 'Map view' && <option>Map view</option>}
+            {region !== ALL_DATA.label && !regions.some((r) => r.country === region) && <option>{region}</option>}
           </select>
           <button type="button" className="qp-ghost" onClick={useMapView} disabled={!mapView} title="Search the area visible on the map">
             <Crop size={15} />

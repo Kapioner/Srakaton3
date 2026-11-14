@@ -24,6 +24,34 @@ import { loadLocations, saveLocations, type WatchLocation } from './features/loc
 import { dataColors } from './theme.ts';
 
 const nf = new Intl.NumberFormat('en-US');
+
+// Shareable links: the applied search lives in the URL (?bbox=..&from=..&to=..&region=..&view=anomaly).
+const DATE_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+
+function queryFromUrl(): Query {
+  const p = new URLSearchParams(window.location.search);
+  const bbox = p.get('bbox')?.split(',').map(Number);
+  const okBbox = bbox && bbox.length === 4 && bbox.every(Number.isFinite) ? (bbox as Bbox) : null;
+  const from = p.get('from');
+  const to = p.get('to');
+  return {
+    bbox: okBbox,
+    from: from && DATE_RE.test(from) ? from : null,
+    to: to && DATE_RE.test(to) ? to : null,
+    label: p.get('region') ?? (okBbox ? 'Map view' : ALL_DATA.label),
+  };
+}
+
+function writeUrl(q: Query, mode: CalendarMode) {
+  const p = new URLSearchParams();
+  if (q.bbox) p.set('bbox', q.bbox.join(','));
+  if (q.from) p.set('from', q.from);
+  if (q.to) p.set('to', q.to);
+  if (q.label !== ALL_DATA.label) p.set('region', q.label);
+  if (mode === 'anomaly') p.set('view', 'anomaly');
+  const qs = p.toString();
+  window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`);
+}
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** One loadable view: its data, whether a request is running, and its own error (one failing view does not blank the page). */
@@ -53,7 +81,7 @@ export function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [bootError, setBootError] = useState<string | null>(null);
 
-  const [query, setQuery] = useState<Query>(ALL_DATA);
+  const [query, setQuery] = useState<Query>(queryFromUrl);
   const [calendar, loadCalendar] = useView<CalendarResponse>();
   const [summary, loadSummary] = useView<SummaryResponse>();
   const [series, loadSeries] = useView<SeriesResponse>();
@@ -61,7 +89,10 @@ export function App() {
   const [grid, loadGrid] = useView<GridResponse>();
   const [mapViewState, setMapViewState] = useState<Bbox | null>(null);
 
-  const [calendarMode, setCalendarMode] = useState<CalendarMode>('count');
+  const [calendarMode, setCalendarMode] = useState<CalendarMode>(() =>
+    new URLSearchParams(window.location.search).get('view') === 'anomaly' ? 'anomaly' : 'count',
+  );
+  useEffect(() => writeUrl(query, calendarMode), [query, calendarMode]);
   const [locations, setLocations] = useState<WatchLocation[]>(loadLocations);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addMode, setAddMode] = useState(false);
