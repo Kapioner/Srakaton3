@@ -24,6 +24,19 @@ In addition to numerical information, you could consider how color ramps might r
 
 Target users: emergency managers.
 
+## Hackathon rules & judging (from the local event guide)
+
+- Event: NASA Space Apps Challenge 2026, Stalowa Wola, **14–15 November 2026**. Our challenge: **"Harmonization of MODIS and VIIRS Hot Spots"** (technology category).
+- **Submission deadline: Sunday 15 November 2026, 23:59 local time**, via the Space Apps portal. Everything on the submission page **in English** (a video may be in Polish only with English subtitles). No profanity.
+- Submission fields: title, high-level summary, **public link to project files** (GitHub repo), **demo link** (max **7 slides** or max **30 s video**; judges stop after the limit), detailed description (what, how, tools), **Space Agency Data** (which NASA data and how; required for global judging), Hackathon Journey, References (all data, code, tools used).
+- Local judging: **live pitch max 3 min + Q&A**, then judges read the submission; each criterion scored **1–5**:
+  1. **Impact:** a real problem with broad reach and benefit.
+  2. **Creativity:** an original or novel approach.
+  3. **Validity:** scientifically sound, does what it claims, works in the real world.
+  4. **Relevance:** answers this challenge, is complete, uses NASA data meaningfully.
+  5. **Presentation:** clear story (challenge → solution → why it matters). The guide stresses that teams often neglect this one.
+- Suggested 30 s demo story: who we are → which challenge and why → name + tagline → how it works (screenshots) → future vision.
+
 ## Tech stack (decided)
 
 - **Monorepo:** `etl/`, `server/`, `web/`.
