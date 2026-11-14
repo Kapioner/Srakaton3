@@ -44,14 +44,33 @@ async function hasParquet(dir: string): Promise<boolean> {
   return false;
 }
 
+/** Creates the views once; concurrent first requests share the same promise (DuckDB rejects parallel CREATE VIEW). */
+let viewsPromise: Promise<void> | null = null;
+function ensureViews(): Promise<void> {
+  viewsPromise ??= createViews().catch((err) => {
+    viewsPromise = null;
+    throw err;
+  });
+  return viewsPromise;
+}
+
 async function createViews() {
   // union_by_name: partitions written by different ETL versions may differ in column order.
   await exec(`CREATE OR REPLACE VIEW harmonized AS
     SELECT * FROM read_parquet('${parquetGlob('harmonized')}', hive_partitioning = true, union_by_name = true)`);
   await exec(`CREATE OR REPLACE VIEW hotspots AS
     SELECT * FROM read_parquet('${parquetGlob('hotspots')}', hive_partitioning = true, union_by_name = true)`);
+  monthlyReady = await hasParquet(paths.harmonizedMonthlyDir);
+  if (monthlyReady) {
+    await exec(`CREATE OR REPLACE VIEW harmonized_monthly AS
+      SELECT * FROM read_parquet('${parquetGlob('harmonized_monthly')}', hive_partitioning = true, union_by_name = true)`);
+  }
   viewsReady = true;
 }
+
+let monthlyReady = false;
+/** True when the ETL's monthly aggregate exists: whole-month queries read it instead of the daily one. */
+export const hasMonthly = () => monthlyReady;
 
 /** Current data source; re-checked every few seconds so an ETL run is picked up without a restart. */
 export async function dataset(): Promise<DatasetState> {
@@ -62,7 +81,7 @@ export async function dataset(): Promise<DatasetState> {
   } else {
     const ok = (await hasParquet(paths.harmonizedDir)) && (await hasParquet(paths.hotspotsDir));
     if (ok) {
-      if (!viewsReady) await createViews();
+      if (!viewsReady) await ensureViews();
       value = { source: 'parquet', reason: null };
     } else {
       const reason = `No ETL output in ${config.parquetDir} (run: npm run etl:all)`;

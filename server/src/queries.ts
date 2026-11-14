@@ -20,7 +20,7 @@ import type {
 } from '../../shared/api.ts';
 import { EXPORT_COLUMNS, FIRE_UNIT } from '../../shared/api.ts';
 import { config, fwd, paths } from './config.ts';
-import { getMeta } from './dataset.ts';
+import { getMeta, hasMonthly } from './dataset.ts';
 import { existsSync } from 'node:fs';
 import { exec, query } from './db.ts';
 import { BadRequest, type CommonParams } from './params.ts';
@@ -47,6 +47,23 @@ const year = (d: string) => Number(d.slice(0, 4));
 /** WHERE clause for the harmonized view (columns lat, lon, acq_date, year). */
 function hzWhere(f: Filters, from = f.from, to = f.to): string {
   const parts = [`acq_date BETWEEN DATE '${from}' AND DATE '${to}'`, `year BETWEEN ${year(from)} AND ${year(to)}`];
+  if (f.bbox) {
+    const [x0, y0, x1, y1] = f.bbox;
+    parts.push(`lon BETWEEN ${x0} AND ${x1}`, `lat BETWEEN ${y0} AND ${y1}`);
+  }
+  return parts.join(' AND ');
+}
+
+/**
+ * WHERE clause for the harmonized_monthly view, or null when the range does not cover whole months
+ * (or the monthly aggregate is missing) - then the caller uses the daily view. ~10x faster on world data.
+ */
+function monthlyWhere(f: Filters, meta: MetaResponse, from = f.from, to = f.to): string | null {
+  if (!hasMonthly() || from.slice(8) !== '01') return null;
+  const monthEnd = new Date(Date.UTC(year(to), Number(to.slice(5, 7)), 0)).toISOString().slice(0, 10);
+  if (to !== monthEnd && to < meta.dateRange.to) return null;
+  const ym = (d: string) => year(d) * 100 + Number(d.slice(5, 7));
+  const parts = [`year * 100 + month BETWEEN ${ym(from)} AND ${ym(to)}`, `year BETWEEN ${year(from)} AND ${year(to)}`];
   if (f.bbox) {
     const [x0, y0, x1, y1] = f.bbox;
     parts.push(`lon BETWEEN ${x0} AND ${x1}`, `lat BETWEEN ${y0} AND ${y1}`);
@@ -108,9 +125,12 @@ export async function calendar(p: CommonParams, granularity: 'month' | 'day', me
     return { query: { bbox: f.bbox, from: yf.from, to: f.to, granularity, metric }, unit: unitOf(metric), cells, baseline: [], baselineYears: [y0, y1] };
   }
 
+  const mWhere = monthlyWhere(yf, meta);
   const rows = await query(
-    `SELECT year(acq_date)::INT AS y, month(acq_date)::INT AS m, ${METRIC_SQL[metric]} AS v
-     FROM harmonized WHERE ${hzWhere(yf)} GROUP BY ALL`,
+    mWhere
+      ? `SELECT year::INT AS y, month::INT AS m, ${METRIC_SQL[metric]} AS v FROM harmonized_monthly WHERE ${mWhere} GROUP BY ALL`
+      : `SELECT year(acq_date)::INT AS y, month(acq_date)::INT AS m, ${METRIC_SQL[metric]} AS v
+         FROM harmonized WHERE ${hzWhere(yf)} GROUP BY ALL`,
   );
   const byKey = new Map(rows.map((r) => [`${r.y}-${r.m}`, n(r.v)]));
   const dataEnd = meta.dateRange.to.slice(0, 7);
@@ -153,11 +173,24 @@ export async function summary(p: CommonParams): Promise<SummaryResponse> {
   const { f, meta } = await resolveFilters(p);
   const where = hzWhere(f);
 
-  const [[tot], [peakDay], months] = await Promise.all([
-    query(`SELECT coalesce(sum(h), 0) AS h, coalesce(sum(n_modis + n_viirs), 0) AS raw, count(DISTINCT acq_date) AS days FROM harmonized WHERE ${where}`),
-    query(`SELECT acq_date::VARCHAR AS d, sum(h) AS v FROM harmonized WHERE ${where} GROUP BY 1 ORDER BY 2 DESC LIMIT 1`),
-    query(`SELECT year(acq_date)::INT AS y, month(acq_date)::INT AS m, sum(h) AS v FROM harmonized WHERE ${where} GROUP BY ALL`),
-  ]);
+  // One scan grouped by day (at most ~10k rows) gives the total, active days, peak day and months.
+  const daysRows = await query(
+    `SELECT acq_date::VARCHAR AS d, sum(h) AS v, sum(n_modis + n_viirs) AS raw FROM harmonized WHERE ${where} GROUP BY 1`,
+  );
+  const tot = { h: 0, raw: 0, days: daysRows.length };
+  let peakDay: { d: string; v: number } | null = null;
+  const monthMap = new Map<string, { y: number; m: number; v: number }>();
+  for (const r of daysRows) {
+    const v = Number(r.v);
+    tot.h += v;
+    tot.raw += Number(r.raw);
+    if (!peakDay || v > peakDay.v) peakDay = { d: String(r.d), v };
+    const key = String(r.d).slice(0, 7);
+    const mm = monthMap.get(key) ?? { y: Number(key.slice(0, 4)), m: Number(key.slice(5, 7)), v: 0 };
+    mm.v += v;
+    monthMap.set(key, mm);
+  }
+  const months = [...monthMap.values()];
 
   const peakMonth = months.reduce<(typeof months)[number] | null>((a, r) => (!a || Number(r.v) > Number(a.v) ? r : a), null);
   const years = new Map<number, number>();
@@ -173,7 +206,7 @@ export async function summary(p: CommonParams): Promise<SummaryResponse> {
     peakDay: peakDay ? { date: String(peakDay.d), value: r1(Number(peakDay.v))! } : null,
     peakMonth: peakMonth ? { year: Number(peakMonth.y), month: Number(peakMonth.m), value: r1(Number(peakMonth.v))! } : null,
     peakYear: peakYear ? { year: peakYear[0], value: r1(peakYear[1])! } : null,
-    comparison: await samePeriodComparison(f, meta),
+    comparison: await samePeriodComparison(f, meta, tot.h),
   };
 }
 
@@ -181,42 +214,44 @@ export async function summary(p: CommonParams): Promise<SummaryResponse> {
  * "How does this period compare?": the same calendar window (e.g. 1-31 Aug) in every other year of the
  * dataset, for the same region. Only for windows up to one year long.
  */
-async function samePeriodComparison(f: Filters, meta: MetaResponse): Promise<SummaryResponse['comparison']> {
+async function samePeriodComparison(f: Filters, meta: MetaResponse, total: number): Promise<SummaryResponse['comparison']> {
   const days = (Date.parse(f.to) - Date.parse(f.from)) / 86_400_000;
   const y0 = firstFullYear(meta);
   const y1 = year(meta.dateRange.to);
   const empty = { periodValue: 0, baselineMean: 0, ratio: null, rank: 1, outOf: 1, baselineYears: [year(f.from), year(f.to)] as [number, number] };
-  if (days > 366) {
-    const [row] = await query(`SELECT coalesce(sum(h), 0) AS v FROM harmonized WHERE ${hzWhere(f)}`);
-    return { ...empty, periodValue: r1(Number(row.v))! };
-  }
+  if (days > 366) return { ...empty, periodValue: r1(total)! };
 
   // Shift the window by k years, keeping only windows that lie inside the dataset.
   const kMin = y0 - year(f.from);
   const kMax = y1 - year(f.to);
-  const shifts: string[] = [];
+  const startYears: number[] = [];
   for (let k = kMin; k <= kMax; k++) {
-    const d0 = `${year(f.from) + k}${f.from.slice(4)}`;
-    const d1 = `${year(f.to) + k}${f.to.slice(4)}`;
-    if (d1 > meta.dateRange.to) continue;
-    // 29 Feb in a non-leap year: TRY_CAST gives NULL, use 28 Feb instead.
-    shifts.push(`(${k}, coalesce(TRY_CAST('${d0}' AS DATE), DATE '${d0.slice(0, 8)}28'), coalesce(TRY_CAST('${d1}' AS DATE), DATE '${d1.slice(0, 8)}28'))`);
+    if (`${year(f.to) + k}${f.to.slice(4)}` <= meta.dateRange.to) startYears.push(year(f.from) + k);
   }
-  if (shifts.length < 2) return empty;
+  if (startYears.length < 2) return empty;
 
+  // One scan instead of a range join (which times out on world data): every row is matched to its window
+  // by month*100+day; a window that crosses New Year belongs to the year it starts in.
+  const md = (d: string) => Number(d.slice(5, 7)) * 100 + Number(d.slice(8, 10));
+  const mdExpr = '(month(acq_date) * 100 + day(acq_date))';
+  const crosses = year(f.to) > year(f.from);
+  const inWindow = crosses ? `(${mdExpr} >= ${md(f.from)} OR ${mdExpr} <= ${md(f.to)})` : `${mdExpr} BETWEEN ${md(f.from)} AND ${md(f.to)}`;
+  const startYear = crosses ? `year(acq_date) - CASE WHEN ${mdExpr} <= ${md(f.to)} THEN 1 ELSE 0 END` : 'year(acq_date)';
+  const yMin = Math.min(...startYears);
+  const yMax = Math.max(...startYears) + (crosses ? 1 : 0);
   const bboxWhere = f.bbox ? `AND lon BETWEEN ${f.bbox[0]} AND ${f.bbox[2]} AND lat BETWEEN ${f.bbox[1]} AND ${f.bbox[3]}` : '';
-  const rows = await query(`
-    WITH w(k, d0, d1) AS (VALUES ${shifts.join(', ')})
-    SELECT w.k, year(w.d0)::INT AS y, coalesce(sum(hz.h), 0) AS v
-    FROM w LEFT JOIN harmonized hz
-      ON hz.acq_date BETWEEN w.d0 AND w.d1 AND hz.year BETWEEN year(w.d0) AND year(w.d1) ${bboxWhere}
-    GROUP BY ALL ORDER BY w.k`);
+  const found = await query(`
+    SELECT (${startYear})::INT AS y, coalesce(sum(h), 0) AS v FROM harmonized
+    WHERE ${inWindow} AND year BETWEEN ${yMin} AND ${yMax} ${bboxWhere}
+    GROUP BY 1`);
+  const byYear = new Map(found.map((r) => [Number(r.y), Number(r.v)]));
+  const rows = startYears.map((y) => ({ k: y - year(f.from), y, v: byYear.get(y) ?? 0 }));
 
   const current = rows.find((r) => Number(r.k) === 0);
   // The selected window itself may lie outside the comparable years (e.g. a partial first year).
   const value = current
     ? Number(current.v)
-    : Number((await query(`SELECT coalesce(sum(h), 0) AS v FROM harmonized WHERE ${hzWhere(f)}`))[0].v);
+    : total;
   const others = rows.filter((r) => Number(r.k) !== 0).map((r) => Number(r.v));
   const mean = others.reduce((a, b) => a + b, 0) / Math.max(1, others.length);
   const rank = 1 + others.filter((v) => v > value).length;
@@ -235,11 +270,12 @@ async function samePeriodComparison(f: Filters, meta: MetaResponse): Promise<Sum
 export async function series(p: CommonParams, by: 'year' | 'month'): Promise<SeriesResponse> {
   const { f, meta } = await resolveFilters(p);
   const yf = p.from ? f : { ...f, from: `${Math.max(year(f.from), firstFullYear(meta))}-01-01` };
-  const monthCol = by === 'month' ? ', month(acq_date)::INT AS m' : '';
+  const mWhere = monthlyWhere(yf, meta);
+  const monthCol = by === 'month' ? (mWhere ? ', month::INT AS m' : ', month(acq_date)::INT AS m') : '';
   const rows = await query(
-    `SELECT year(acq_date)::INT AS y${monthCol}, sum(h) AS h, sum(h_modis) AS hm, sum(h_viirs) AS hv,
+    `SELECT ${mWhere ? 'year::INT' : 'year(acq_date)::INT'} AS y${monthCol}, sum(h) AS h, sum(h_modis) AS hm, sum(h_viirs) AS hv,
             coalesce(sum(n_modis), 0) AS nm, coalesce(sum(n_viirs), 0) AS nv
-     FROM harmonized WHERE ${hzWhere(yf)} GROUP BY ALL ORDER BY ALL`,
+     FROM ${mWhere ? `harmonized_monthly WHERE ${mWhere}` : `harmonized WHERE ${hzWhere(yf)}`} GROUP BY ALL ORDER BY ALL`,
   );
   const byKey = new Map(rows.map((r) => [by === 'month' ? `${r.y}-${r.m}` : `${r.y}`, r]));
   const points: SeriesResponse['points'] = [];
@@ -266,23 +302,32 @@ export async function series(p: CommonParams, by: 'year' | 'month'): Promise<Ser
 const GRID_STEPS = [0.1, 0.25, 0.5, 1, 2, 5];
 
 export async function grid(p: CommonParams, requestedRes: number): Promise<GridResponse> {
-  const { f } = await resolveFilters(p);
-  const where = hzWhere(f);
+  const { f, meta } = await resolveFilters(p);
+  // Whole months -> the monthly aggregate (the default "all years, whole world" view: 24 s -> ~1 s).
+  const mWhere = monthlyWhere(f, meta);
+  const table = mWhere ? `harmonized_monthly WHERE ${mWhere}` : `harmonized WHERE ${hzWhere(f)}`;
   const max = config.limits.gridMaxCells;
 
   // How many 0.1 deg cells are active? Coarsen until the answer fits the limit (area scales with res^2).
-  const [{ c }] = await query(`SELECT count(DISTINCT (cell_lat, cell_lon)) AS c FROM harmonized WHERE ${where}`);
+  const [{ c }] = await query(`SELECT count(DISTINCT (cell_lat, cell_lon)) AS c FROM ${table}`);
   const active = Number(c);
   let res = GRID_STEPS.find((s) => s >= requestedRes) ?? requestedRes;
   while (active / (res / 0.1) ** 2 > max && res < GRID_STEPS[GRID_STEPS.length - 1]) {
     res = GRID_STEPS[GRID_STEPS.indexOf(res) + 1] ?? res * 2;
   }
 
-  const rows = await query(`
-    SELECT round((floor(lon::DOUBLE / ${res}) + 0.5) * ${res}, 4) AS x, round((floor(lat::DOUBLE / ${res}) + 0.5) * ${res}, 4) AS y,
-           sum(h) AS h, sum(n_modis + n_viirs) AS det, count(DISTINCT acq_date) AS days
-    FROM harmonized WHERE ${where}
-    GROUP BY 1, 2 ORDER BY h DESC LIMIT ${max + 1}`);
+  const cell = `round((floor(lon::DOUBLE / ${res}) + 0.5) * ${res}, 4) AS x, round((floor(lat::DOUBLE / ${res}) + 0.5) * ${res}, 4) AS y`;
+  // activeDays: exact on the daily table; on the monthly one exact at 0.1 deg, and for coarser cells the
+  // busiest 0.1 deg sub-cell per month (a lower bound of the distinct fire days).
+  const rows = await query(
+    mWhere
+      ? `WITH m AS (
+           SELECT ${cell}, year, month, sum(h) AS h, sum(n_modis + n_viirs) AS det, max(fire_days) AS days
+           FROM ${table} GROUP BY ALL)
+         SELECT x, y, sum(h) AS h, sum(det) AS det, sum(days) AS days FROM m GROUP BY 1, 2 ORDER BY h DESC LIMIT ${max + 1}`
+      : `SELECT ${cell}, sum(h) AS h, sum(n_modis + n_viirs) AS det, count(DISTINCT acq_date) AS days
+         FROM ${table} GROUP BY 1, 2 ORDER BY h DESC LIMIT ${max + 1}`,
+  );
 
   return {
     type: 'FeatureCollection',

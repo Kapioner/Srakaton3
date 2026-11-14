@@ -66,13 +66,15 @@ export const fwd = (p: string) => p.replaceAll('\\', '/');
 export const paths = {
   hotspotsDir: path.join(config.parquetDir, 'hotspots'),
   harmonizedDir: path.join(config.parquetDir, 'harmonized'),
+  /** Optional 0.1 deg cell x month aggregate (etl:harmonize builds it); used for whole-month queries. */
+  harmonizedMonthlyDir: path.join(config.parquetDir, 'harmonized_monthly'),
   calibrationFile: path.join(config.parquetDir, 'calibration', 'k.parquet'),
   paramsFile: path.join(config.parquetDir, 'calibration', 'params.json'),
   satellitesFile: path.join(config.parquetDir, 'calibration', 'satellites.parquet'),
 };
 
 /** DuckDB-friendly glob for one ETL output table, e.g. parquetGlob('harmonized'). */
-export function parquetGlob(table: 'hotspots' | 'harmonized'): string {
+export function parquetGlob(table: 'hotspots' | 'harmonized' | 'harmonized_monthly'): string {
   return fwd(path.join(config.parquetDir, table, '**', '*.parquet'));
 }
 

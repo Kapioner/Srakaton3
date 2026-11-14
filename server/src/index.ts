@@ -6,6 +6,7 @@ import fastifyStatic from '@fastify/static';
 import Fastify from 'fastify';
 import { config, REPO_ROOT } from './config.ts';
 import { warmUp } from './dataset.ts';
+import { report } from './queries.ts';
 import { apiRoutes } from './routes/api.ts';
 
 const app = Fastify({ logger: { level: 'info' } });
@@ -24,5 +25,14 @@ await app.listen({ port: config.port, host: '0.0.0.0' });
 app.log.info(
   `DuckDB limits: memory ${config.duckdb.memoryLimit}, ${config.duckdb.threads} threads, query timeout ${config.limits.queryTimeoutMs / 1000} s`,
 );
-// Compute dataset metadata in the background so the first page load is fast.
-void warmUp((msg) => app.log.info(msg));
+// Compute dataset metadata in the background so the first page load is fast. The whole-dataset report
+// scans every detection (~40 s on the world dataset), so it is precomputed right after and then cached.
+void warmUp((msg) => app.log.info(msg)).then(async () => {
+  const t0 = performance.now();
+  try {
+    await report({ bbox: null, from: null, to: null });
+    app.log.info(`report (whole dataset) cached in ${((performance.now() - t0) / 1000).toFixed(1)} s`);
+  } catch (err) {
+    app.log.info(`report warm-up skipped: ${(err as Error).message}`);
+  }
+});
