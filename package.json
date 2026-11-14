@@ -19,7 +19,9 @@
     "etl:normalize": "npm run normalize -w etl --",
     "etl:harmonize": "npm run harmonize -w etl --",
     "etl:report": "npm run report -w etl --",
-    "etl:all": "npm run etl:normalize && npm run etl:harmonize && npm run etl:report"
+    "etl:all": "npm run etl:normalize && npm run etl:harmonize && npm run etl:report",
+    "etl:validate": "npm run validate -w etl --",
+    "etl:import-global": "npm run import-global -w etl --"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

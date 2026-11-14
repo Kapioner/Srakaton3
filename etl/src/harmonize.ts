@@ -15,11 +15,12 @@ import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DuckDBInstance } from '@duckdb/node-api';
 import { loadConfig } from './config.ts';
-import { HARMONIZATION as P, calibrationSql, harmonizedDailySql, satellitesSql, subCellDaysSql } from './harmonization.ts';
+import { HARMONIZATION as P, fitCalibration, harmonizedDailySql, harmonizedMonthlySql, satellitesSql } from './harmonization.ts';
 
 const args = process.argv.slice(2);
 const recalibrate = args.includes('--recalibrate');
-const cfg = loadConfig(args.filter((a) => a !== '--recalibrate'));
+const monthlyOnly = args.includes('--monthly-only'); // only rebuild harmonized_monthly from the existing daily aggregate
+const cfg = loadConfig(args.filter((a) => a !== '--recalibrate' && a !== '--monthly-only'));
 
 const fwd = (p: string) => p.replaceAll('\\', '/');
 const lit = (s: string) => `'${fwd(s).replaceAll("'", "''")}'`;
@@ -53,6 +54,26 @@ await conn.run(`COPY sats TO ${lit(path.join(calibDir, 'satellites.parquet'))} (
 console.log('Satellites:');
 console.table(await rows(`SELECT satellite, sensor, first_date::VARCHAR AS first, last_date::VARCHAR AS last FROM sats`));
 
+// ---- Monthly aggregate (cell x month), rebuilt from the daily aggregate - cheap, always for all years ----
+const monthlyDir = path.join(cfg.outputDir, 'harmonized_monthly');
+async function buildMonthly() {
+  const tm = performance.now();
+  const staged = path.join(stagingDir, 'monthly');
+  await rm(staged, { recursive: true, force: true });
+  await conn.run(`COPY (${harmonizedMonthlySql(path.join(harmonizedDir, '**', '*.parquet'))}) TO ${lit(staged)}
+    (FORMAT parquet, COMPRESSION zstd, PARTITION_BY (year), FILENAME_PATTERN 'part_{i}')`);
+  await rm(monthlyDir, { recursive: true, force: true });
+  await rename(staged, monthlyDir);
+  const [s] = await rows(`SELECT count(*) AS n FROM read_parquet(${lit(path.join(monthlyDir, '**', '*.parquet'))})`);
+  console.log(`Monthly aggregate: ${s.n} cell-months -> ${monthlyDir} (${((performance.now() - tm) / 1000).toFixed(1)} s)`);
+}
+if (monthlyOnly) {
+  await buildMonthly();
+  await rm(stagingDir, { recursive: true, force: true });
+  conn.closeSync();
+  process.exit(0);
+}
+
 // ---- Calibration (refit when asked, missing, params changed, or new countries appeared) ----
 const paramsKey = JSON.stringify(P);
 let needCalib = recalibrate || !(await exists(kFile)) || !(await exists(paramsFile));
@@ -69,9 +90,7 @@ if (!needCalib) {
 
 if (needCalib) {
   const tc = performance.now();
-  await conn.run(`CREATE TEMP TABLE sub AS ${subCellDaysSql('true', P)}`);
-  await conn.run(`CREATE TABLE calib AS ${calibrationSql(P)}`);
-  await conn.run('DROP TABLE sub');
+  await fitCalibration(conn, P);
   await mkdir(calibDir, { recursive: true });
   await conn.run(`COPY calib TO ${lit(kFile)} (FORMAT parquet)`);
   await writeFile(paramsFile, JSON.stringify({ params: P, fittedAt: new Date().toISOString() }, null, 2));
@@ -103,6 +122,7 @@ for (const year of years) {
   const [s] = await rows(`SELECT count(*) AS n, round(sum(h), 1) AS h FROM read_parquet(${lit(path.join(target, 'part_0.parquet'))})`);
   console.log(`${year}  ${String(s.n).padStart(9)} cell-days  h=${String(s.h).padStart(10)}  ${((performance.now() - ty) / 1000).toFixed(1)} s`);
 }
+await buildMonthly();
 await rm(stagingDir, { recursive: true, force: true });
 
 // ---- Validation: in the overlap, MODIS-only and VIIRS-only estimates must agree ----
