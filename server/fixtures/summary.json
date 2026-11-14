@@ -1,0 +1,33 @@
+{
+ "query": {
+  "bbox": null,
+  "from": "2001-01-06",
+  "to": "2025-12-31"
+ },
+ "total": 41564.4,
+ "activeDays": 6535,
+ "peakDay": {
+  "date": "2021-08-06",
+  "value": 932
+ },
+ "peakMonth": {
+  "year": 2007,
+  "month": 8,
+  "value": 2448.0
+ },
+ "peakYear": {
+  "year": 2007,
+  "value": 5172.0
+ },
+ "comparison": {
+  "periodValue": 5172.0,
+  "baselineMean": 1662.6,
+  "ratio": 3.11,
+  "rank": 1,
+  "outOf": 25,
+  "baselineYears": [
+   2001,
+   2025
+  ]
+ }
+}
