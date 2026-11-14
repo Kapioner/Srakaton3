@@ -24,6 +24,9 @@ export const REGIONS = [
 ] as const;
 export type Region = (typeof REGIONS)[number];
 
+/** Satellite names as written by the ETL (etl/src/sql.ts). */
+export const SATELLITES = ['Terra', 'Aqua', 'S-NPP', 'NOAA-20', 'NOAA-21'] as const;
+
 export const CONFIDENCE_CLASSES = ['low', 'nominal', 'high'] as const;
 export type ConfidenceClass = (typeof CONFIDENCE_CLASSES)[number];
 
@@ -58,10 +61,10 @@ export const MODES = ['realtime', 'archive', 'forecast'] as const;
 export type Mode = (typeof MODES)[number];
 
 /**
- * Common harmonization grid: 0.01° ≈ 1.1 km, i.e. the MODIS pixel size.
- * A cell is "active" when any satellite saw fire in it, so the sensor of origin stops mattering.
+ * Grid used only to group detections into individual fires for the situation map and the forecast
+ * (0.01° ≈ 1.1 km, about one MODIS pixel). Harmonization is the ETL's job, not this module's.
  */
-export const CELL_SIZE_DEG = 0.01;
+export const CLUSTER_CELL_DEG = 0.01;
 
 export function isValidBBox(bbox: unknown): bbox is BBox {
   if (!Array.isArray(bbox) || bbox.length !== 4 || !bbox.every((v) => Number.isFinite(v))) return false;

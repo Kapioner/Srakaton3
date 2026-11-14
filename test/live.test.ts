@@ -45,6 +45,7 @@ test('live feature: scope → ingest → query → situation → forecast', asyn
       retentionDays: 14,
       pauseResumeMinutes: 60,
       tmpDir: path.join(os.tmpdir(), `firewatch-test-${process.pid}`),
+      archiveDir: path.join(os.tmpdir(), `firewatch-no-archive-${process.pid}`),
     },
     db,
     { logger: false },
@@ -77,7 +78,7 @@ test('live feature: scope → ingest → query → situation → forecast', asyn
     assert.equal(saved.window, '48h');
   });
 
-  await t.test('ingests, harmonizes and isolates a failing sensor', async () => {
+  await t.test('ingests into the ETL schema and isolates a failing sensor', async () => {
     const run = (await app.inject({ method: 'POST', url: '/api/live/ingest' })).json();
     // NOAA-20 file is missing on the fake server → partial, the rest still lands.
     assert.equal(run.status, 'partial');
@@ -91,25 +92,26 @@ test('live feature: scope → ingest → query → situation → forecast', asyn
     const statuses = run.details.outcomes.map((o: any) => o.status);
     assert.deepEqual(statuses, ['unchanged', 'unchanged', 'failed']);
     const status = (await app.inject('/api/live/status')).json();
-    assert.equal(status.store.hotspots, 8);
+    assert.equal(status.live.liveHotspots, 8);
+    assert.equal(status.archive.available, false);
   });
 
   await t.test('serves hotspots on a common confidence scale', async () => {
-    const body = (await app.inject('/api/live/hotspots?bbox=19,34,29,42')).json();
+    const body = (await app.inject('/api/live/hotspots?bbox=19,34,29,42&hours=48')).json();
     assert.equal(body.count, 8);
-    const modis = body.hotspots.filter((h: any) => h.instrument === 'MODIS');
+    const modis = body.hotspots.filter((h: any) => h.sensor === 'MODIS');
     assert.deepEqual(modis.map((h: any) => `${h.satellite}:${h.confidence}`).sort(), ['Aqua:nominal', 'Terra:low']);
     assert.ok(body.hotspots.every((h: any) => ['low', 'nominal', 'high'].includes(h.confidence)));
 
-    const high = (await app.inject('/api/live/hotspots?minConfidence=high')).json();
+    const high = (await app.inject('/api/live/hotspots?minConfidence=high&hours=48')).json();
     assert.equal(high.count, 3);
   });
 
   await t.test('streams a CSV export', async () => {
-    const res = await app.inject('/api/live/hotspots?format=csv');
+    const res = await app.inject('/api/live/hotspots?format=csv&hours=48');
     assert.match(res.headers['content-disposition'] as string, /attachment/);
     const lines = res.body.trim().split('\n');
-    assert.equal(lines[0], 'latitude,longitude,acq_datetime,instrument,satellite,confidence,frp,daynight');
+    assert.equal(lines[0], 'latitude,longitude,acq_datetime,sensor,satellite,confidence,frp,daynight,type,country,origin');
     assert.equal(lines.length, 9);
   });
 
@@ -133,7 +135,7 @@ test('live feature: scope → ingest → query → situation → forecast', asyn
   });
 
   await t.test('serves hotspots as GeoJSON points for the map', async () => {
-    const body = (await app.inject('/api/live/hotspots?format=geojson')).json();
+    const body = (await app.inject('/api/live/hotspots?format=geojson&hours=48')).json();
     assert.equal(body.type, 'FeatureCollection');
     assert.equal(body.features.length, 8);
     const [lon, lat] = body.features[0].geometry.coordinates;
@@ -197,10 +199,10 @@ test('live feature: scope → ingest → query → situation → forecast', asyn
     const body = (await app.inject('/api/live/report?bbox=19,34,29,42&hours=48')).json();
     assert.equal(body.area.source, 'request');
     assert.equal(body.totals.detections, 9);
-    assert.ok(body.totals.activeCells > 0 && body.totals.activeCells <= 9);
+    assert.ok(body.totals.fireCells > 0 && body.totals.fireCells <= 9);
     assert.equal(body.totals.maxFrpMw, 41);
     assert.equal(body.byConfidence.reduce((sum: number, c: any) => sum + c.detections, 0), 9);
-    assert.deepEqual(body.bySatellite.map((s: any) => s.satellite).sort(), ['Aqua', 'SNPP', 'Terra']);
+    assert.deepEqual(body.bySatellite.map((s: any) => s.satellite).sort(), ['Aqua', 'S-NPP', 'Terra']);
     assert.ok(body.timeline.length >= 48 && body.timeline.length <= 50);
     assert.equal(body.timeline.reduce((sum: number, h: any) => sum + h.detections, 0), 9);
     assert.ok(Math.abs(body.topAreas[0].lon - 23.53) < 0.1);

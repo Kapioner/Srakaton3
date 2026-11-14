@@ -1,22 +1,52 @@
 import type { Database } from './database.js';
 
+/**
+ * Columns of one normalized hotspot, exactly as written by the ETL (etl/src/sql.ts, step 1).
+ * Live rows use the same schema so archive and live data can be read as one table.
+ * A test compares this list with the ETL's real output.
+ */
+export const HOTSPOT_COLUMNS = [
+  ['latitude', 'DOUBLE'],
+  ['longitude', 'DOUBLE'],
+  ['acq_date', 'DATE'],
+  ['acq_time', 'VARCHAR'],
+  ['acq_datetime', 'TIMESTAMP'],
+  ['sensor', 'VARCHAR'],
+  ['satellite', 'VARCHAR'],
+  ['confidence', 'VARCHAR'],
+  ['confidence_raw', 'VARCHAR'],
+  ['frp', 'DOUBLE'],
+  ['bt_mir', 'DOUBLE'],
+  ['bt_tir', 'DOUBLE'],
+  ['scan', 'DOUBLE'],
+  ['track', 'DOUBLE'],
+  ['pixel_km2', 'DOUBLE'],
+  ['daynight', 'VARCHAR'],
+  ['type', 'TINYINT'],
+  ['version', 'VARCHAR'],
+  ['source', 'VARCHAR'],
+  ['country', 'VARCHAR'],
+  ['year', 'INTEGER'],
+] as const;
+
+export const HOTSPOT_COLUMN_NAMES = HOTSPOT_COLUMNS.map(([name]) => name);
+
 /** Idempotent schema setup for the live (near-real-time) feature. */
 export async function migrate(db: Database): Promise<void> {
-  // Harmonized hotspots. The primary key makes re-ingesting overlapping FIRMS files idempotent.
+  // Earlier versions stored their own harmonized columns. Live rows are a cache of FIRMS files,
+  // so an old table is simply dropped and refilled by the next ingest.
+  const [legacy] = await db.all(
+    `SELECT count(*)::INTEGER AS n FROM information_schema.columns
+     WHERE table_name = 'live_hotspots' AND column_name = 'cell_x'`,
+  );
+  if (legacy.n > 0) await db.run('DROP TABLE live_hotspots');
+
   await db.run(`
     CREATE TABLE IF NOT EXISTS live_hotspots (
-      latitude         DOUBLE    NOT NULL,
-      longitude        DOUBLE    NOT NULL,
-      acq_ts           TIMESTAMP NOT NULL,  -- UTC
-      instrument       VARCHAR   NOT NULL,  -- MODIS | VIIRS (provenance only)
-      satellite        VARCHAR   NOT NULL,  -- Terra | Aqua | SNPP | NOAA20 | NOAA21
-      confidence_class VARCHAR   NOT NULL,  -- low | nominal | high (common scale)
-      frp              DOUBLE,              -- fire radiative power, MW
-      daynight         VARCHAR,
-      cell_x           INTEGER   NOT NULL,  -- common grid index (longitude)
-      cell_y           INTEGER   NOT NULL,  -- common grid index (latitude)
-      ingested_at      TIMESTAMP NOT NULL,
-      PRIMARY KEY (satellite, acq_ts, latitude, longitude)
+      ${HOTSPOT_COLUMNS.map(([name, type]) => `"${name}" ${type}`).join(',\n      ')},
+      ingested_at TIMESTAMP NOT NULL,
+      -- Re-ingesting overlapping FIRMS files (24h/48h/7d windows) is idempotent.
+      PRIMARY KEY (satellite, acq_datetime, latitude, longitude)
     )`);
 
   await db.run(`

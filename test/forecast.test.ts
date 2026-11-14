@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CELL_SIZE_DEG } from '../src/live/domain.js';
+import { CLUSTER_CELL_DEG } from '../src/live/domain.js';
 import { clusterDetections } from '../src/live/forecast/clustering.js';
 import { CentroidDriftPredictor } from '../src/live/forecast/predictor.js';
 import type { Detection } from '../src/live/repository.js';
@@ -8,7 +8,7 @@ import type { Detection } from '../src/live/repository.js';
 const KM_PER_DEG_LON = 111.32 * Math.cos((38 * Math.PI) / 180);
 
 function detection(lon: number, lat: number, t: number): Detection {
-  return { lon, lat, t, frp: 10, cellX: Math.floor(lon / CELL_SIZE_DEG), cellY: Math.floor(lat / CELL_SIZE_DEG) };
+  return { lon, lat, t, frp: 10, cellX: Math.floor(lon / CLUSTER_CELL_DEG), cellY: Math.floor(lat / CLUSTER_CELL_DEG) };
 }
 
 /** A fire front of three pixels moving east at `speedKmh`, observed every 12 h. */

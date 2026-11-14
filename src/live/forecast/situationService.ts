@@ -1,4 +1,4 @@
-import { CELL_SIZE_DEG, type BBox } from '../domain.js';
+import { CLUSTER_CELL_DEG, type BBox } from '../domain.js';
 import type { Detection, HotspotRepository } from '../repository.js';
 import { clusterDetections, type FireCluster } from './clustering.js';
 import { circleRing, convexHullRing, round, type LonLat } from './geo.js';
@@ -106,7 +106,7 @@ export class SituationService {
 
   private async loadClusters(query: SituationQuery, now: Date): Promise<FireCluster[]> {
     const from = new Date(now.getTime() - query.lookbackHours * 3_600_000);
-    const detections = await this.hotspots.detections({ bbox: query.bbox, from, to: now });
+    const detections = await this.hotspots.detections({ bbox: query.bbox, from, to: now, vegetationOnly: true });
     return clusterDetections(detections)
       .sort((a, b) => b.activeCells - a.activeCells)
       .slice(0, query.limit);
@@ -118,7 +118,7 @@ function describe(cluster: FireCluster, now: Date) {
   const lastSeen = Math.max(...times);
   const lat = mean(cluster.detections.map((d) => d.lat));
   const lon = mean(cluster.detections.map((d) => d.lon));
-  const cellKm2 = (CELL_SIZE_DEG * 110.574) * (CELL_SIZE_DEG * 111.32 * Math.cos((lat * Math.PI) / 180));
+  const cellKm2 = (CLUSTER_CELL_DEG * 110.574) * (CLUSTER_CELL_DEG * 111.32 * Math.cos((lat * Math.PI) / 180));
   return {
     clusterId: cluster.id,
     centroid: round([lon, lat]),
@@ -137,7 +137,7 @@ function outline(cluster: FireCluster): LonLat[] {
   const corners = new Map<string, LonLat>();
   for (const { cellX, cellY } of cluster.detections as Detection[]) {
     for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
-      const corner: LonLat = [(cellX + dx) * CELL_SIZE_DEG, (cellY + dy) * CELL_SIZE_DEG];
+      const corner: LonLat = [(cellX + dx) * CLUSTER_CELL_DEG, (cellY + dy) * CLUSTER_CELL_DEG];
       corners.set(corner.join(','), corner);
     }
   }

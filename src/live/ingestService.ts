@@ -1,3 +1,4 @@
+import type { HotspotCatalog } from '../db/catalog.js';
 import type { IngestScope, Sensor } from './domain.js';
 import type { HotspotSource } from './firms/source.js';
 import type { HotspotRepository, IngestRun, IngestStateRepository } from './repository.js';
@@ -25,6 +26,7 @@ export class IngestService {
     private readonly source: HotspotSource,
     private readonly hotspots: HotspotRepository,
     private readonly state: IngestStateRepository,
+    private readonly catalog: HotspotCatalog,
     private readonly retentionDays: number,
     private readonly log: Logger,
   ) {}
@@ -53,6 +55,8 @@ export class IngestService {
 
   private async execute(): Promise<IngestRun> {
     const startedAt = new Date();
+    // Pick up partitions the ETL added meanwhile, so archived days replace live ones.
+    await this.catalog.refresh();
     const scope = await this.state.getScope();
     const outcomes: SensorOutcome[] = [];
 
@@ -60,7 +64,7 @@ export class IngestService {
     for (const sensor of scope.sensors) {
       outcomes.push(await this.ingestSensor(sensor, scope));
     }
-    await this.hotspots.purgeOlderThan(new Date(Date.now() - this.retentionDays * 86_400_000));
+    await this.hotspots.purge(new Date(Date.now() - this.retentionDays * 86_400_000));
 
     const failed = outcomes.filter((o) => o.status === 'failed').length;
     const run: IngestRun = {

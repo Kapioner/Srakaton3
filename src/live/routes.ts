@@ -1,5 +1,6 @@
 import { Readable } from 'node:stream';
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import type { HotspotCatalog } from '../db/catalog.js';
 import type { Row } from '../db/database.js';
 import {
   CONFIDENCE_CLASSES,
@@ -26,6 +27,7 @@ export interface LiveRoutesDeps {
   situation: SituationService;
   report: ReportService;
   acquisition: AcquisitionController;
+  catalog: HotspotCatalog;
 }
 
 const scopeSchema = {
@@ -47,7 +49,7 @@ const spatialQuery = {
 
 /** HTTP surface of the live feature. Mounted under a prefix so it sits beside the archive API. */
 export const liveRoutes: FastifyPluginAsync<LiveRoutesDeps> = async (app: FastifyInstance, deps) => {
-  const { hotspots, state, ingest, situation, report, acquisition } = deps;
+  const { hotspots, state, ingest, situation, report, acquisition, catalog } = deps;
 
   // --- Mode: realtime acquisition vs. frozen data (archive browsing, forecast) ---------------
 
@@ -118,7 +120,8 @@ export const liveRoutes: FastifyPluginAsync<LiveRoutesDeps> = async (app: Fastif
     running: ingest.isRunning,
     scope: await state.getScope(),
     lastRun: await state.lastRun(),
-    store: await hotspots.stats(),
+    live: await hotspots.stats(),
+    archive: catalog.archive,
   }));
 
   // --- Harmonized hotspots ------------------------------------------------------------------
@@ -129,7 +132,9 @@ export const liveRoutes: FastifyPluginAsync<LiveRoutesDeps> = async (app: Fastif
       from?: string;
       to?: string;
       since?: string;
+      hours?: number;
       minConfidence?: ConfidenceClass;
+      vegetationOnly?: boolean;
       format?: 'json' | 'geojson' | 'csv';
       limit?: number;
     };
@@ -144,7 +149,9 @@ export const liveRoutes: FastifyPluginAsync<LiveRoutesDeps> = async (app: Fastif
             from: { type: 'string', format: 'date-time', description: 'acquisition time ≥' },
             to: { type: 'string', format: 'date-time', description: 'acquisition time ≤' },
             since: { type: 'string', format: 'date-time', description: 'cursor from a previous response' },
+            hours: { type: 'integer', minimum: 1, maximum: 8760, description: 'window ending now, used when no `from` is given (default 24)' },
             minConfidence: { type: 'string', enum: CONFIDENCE_CLASSES },
+            vegetationOnly: { type: 'boolean', default: true, description: 'archive rows with type ≠ 0 are left out' },
             format: { type: 'string', enum: ['json', 'geojson', 'csv'], default: 'json' },
             limit: { type: 'integer', minimum: 1, maximum: 50_000, default: 5_000 },
           },
@@ -152,16 +159,19 @@ export const liveRoutes: FastifyPluginAsync<LiveRoutesDeps> = async (app: Fastif
       },
     },
     async (request, reply) => {
-      const { from, to, since, minConfidence, format, limit } = request.query;
+      const { from, to, since, hours, minConfidence, vegetationOnly, format, limit } = request.query;
       // Read the cursor first and pin the query to it, so rows stored in between are not lost.
       const cursor = await hotspots.cursor();
+      // Without an explicit start, read a recent window instead of the whole archive.
+      const start = from ? new Date(from) : since ? undefined : new Date(Date.now() - (hours ?? 24) * 3_600_000);
       const filter: HotspotFilter = {
         bbox: parseBBox(request.query.bbox),
-        from: from ? new Date(from) : undefined,
+        from: start,
         to: to ? new Date(to) : undefined,
         ingestedAfter: since ? new Date(since) : undefined,
         ingestedUntil: cursor ? new Date(cursor) : undefined,
         minConfidence,
+        vegetationOnly,
       };
 
       if (format === 'csv') {

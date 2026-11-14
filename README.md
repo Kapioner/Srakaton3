@@ -1,30 +1,48 @@
 # server — live (near-real-time) fire feature
 
-Fastify + DuckDB backend that keeps pulling NASA FIRMS active-fire files, harmonizes MODIS and VIIRS
-detections into one table, and serves the current situation plus a short-term movement forecast.
-It is a separate feature that sits next to the archive/calendar API: own route prefix (`/api/live`),
-own tables (`live_*`), same `Database` instance.
+Fastify + DuckDB backend that keeps pulling NASA FIRMS active-fire files and serves them together with
+the ETL archive: the current situation, a report for the selected area and a short-term movement
+forecast. It does **not** harmonize anything; that is the ETL's job (`etl/src/harmonization.ts`).
 
 ## Run
 
 ```bash
+cd etl && npm install && cd ..   # the server imports etl/src at runtime and in tests
+cd server
 npm install
-cp .env.example .env      # optional, defaults work
-npm run dev               # http://localhost:3001
-npm test                  # runs against a local fake FIRMS server, no network needed
+npm run dev                      # http://localhost:3001
+npm test                         # local fake FIRMS + the real ETL normalize SQL, no network needed
 ```
 
-## Data source
+Env (see `.env.example`); relative paths resolve against the repo root, as in the ETL:
+`ARCHIVE_DIR` (default `data/parquet`, i.e. the ETL's `OUTPUT_DIR`), `LIVE_DB_PATH`
+(default `data/live/live.duckdb`), `LIVE_POLLING`, `LIVE_RETENTION_DAYS`, `LIVE_PAUSE_RESUME_MINUTES`.
 
-Keyless FIRMS files listed on <https://firms.modaps.eosdis.nasa.gov/active_fire/>:
+## Data model: archive + live
 
-```
-{FIRMS_BASE_URL}/{sensor-dir}/csv/{PREFIX}_{Region}_{24h|48h|7d}.csv
-e.g. .../noaa-20-viirs-c2/csv/J1_VIIRS_C2_Europe_24h.csv
-```
+| | Archive | Live |
+|---|---|---|
+| Source | FIRMS yearly per-country files | FIRMS NRT files (24h/48h/7d, per region) |
+| Written by | `etl` (`npm run normalize`) | this server, every 30 s |
+| Stored in | `<ARCHIVE_DIR>/hotspots/year=/country=/*.parquet` | `live_hotspots` in `LIVE_DB_PATH` |
+| Schema | `etl/src/sql.ts` | **the same columns and types** |
+| `type`, `country` | filled | `NULL` (NRT files carry neither) |
 
-Sensors: MODIS (Terra+Aqua), VIIRS S-NPP, VIIRS NOAA-20, VIIRS NOAA-21. Downloads use conditional
-GETs (ETag / Last-Modified), so an unchanged file costs one 304.
+The server reads both through one DuckDB view, `hotspots_all`, which adds `origin`
+(`archive` | `live`) and `ingested_at` (live only). Overlap rule: per satellite, the days the archive
+holds come from the archive and live rows fill in the days after it. Live rows the archive covers
+are not stored at all, and when the ETL adds a partition the server notices it (directory scan before
+every ingest), rebuilds the views and deletes the superseded live rows. This assumes the archive's
+country scope covers the live region (e.g. `DATA_COUNTRIES=*` with `region: Global`).
+
+Live normalization (`src/live/repository.ts`) uses the ETL's mappings (satellite names `Terra | Aqua |
+S-NPP | NOAA-20 | NOAA-21`, confidence classes, `acq_datetime`, `source`, `pixel_km2`).
+`test/archive.test.ts` runs the real `copyToParquet` from `etl/src/sql.ts` and fails if the live
+schema or values drift from it.
+
+What this means for harmonization: `etl:harmonize` keeps working on the archive only. Live rows
+have no `type` and no `country`, which its calibration needs, so the harmonized calendar ends where
+the archive ends. Vegetation filtering (`type = 0`) applies to archive rows; live rows are kept.
 
 ## API (`/api/live`)
 
@@ -32,18 +50,56 @@ GETs (ETag / Last-Modified), so an unchanged file costs one 304.
 |---|---|---|
 | GET | `/mode` | Current mode: `{ mode, acquiring, since, resumeAt }` |
 | PUT | `/mode` | `{ "mode": "realtime" \| "archive" \| "forecast", "resumeAfterMinutes"?: n \| null }` |
-| GET | `/report` | Summary for the selected area: `bbox`, `hours` (default 24) |
 | GET | `/scope/options` | Allowed regions, sensors and windows (for the frontend form) |
 | GET | `/scope` | Current ingest scope |
 | PUT | `/scope` | Set scope, then refresh in the background (202) |
 | POST | `/ingest` | Run an ingest now and return its result (409 when paused) |
-| GET | `/status` | Running flag, scope, last run (per-sensor outcome), store stats |
-| GET | `/hotspots` | Harmonized hotspots: `bbox`, `from`, `to`, `since`, `minConfidence`, `limit`, `format=json\|geojson\|csv` (CSV is streamed) |
-| GET | `/events` | Server-Sent Events: `hello` on connect, `ingest` after every run (`{status, inserted, finishedAt, cursor}`), `mode` after every mode change |
+| GET | `/status` | Mode, running flag, scope, last run, live stats, archive (partitions, coverage per satellite) |
+| GET | `/hotspots` | Archive + live hotspots: `bbox`, `from`, `to`, `hours` (default 24, used without `from`), `since`, `minConfidence`, `vegetationOnly` (default true), `limit`, `format=json\|geojson\|csv` (CSV is streamed) |
+| GET | `/events` | Server-Sent Events: `hello`, `ingest` after every run, `mode` after every mode change |
+| GET | `/report` | Summary for the selected area: `bbox`, `hours` (default 24) |
 | GET | `/situation` | Current fires as GeoJSON polygons: `bbox`, `hours` (default 24), `limit` |
 | GET | `/forecast` | Movement forecast as GeoJSON: `bbox`, `lookbackHours` (48), `horizons` (`6,12,24`), `limit` |
 
-`bbox` is always `west,south,east,north`.
+`bbox` is always `west,south,east,north`. Every hotspot carries `sensor`, `satellite`, `confidence`,
+`frp`, `daynight`, `type`, `country` and `origin`.
+
+Scope body (also the default: the whole world, every 30 seconds):
+
+```json
+{
+  "region": "Global",
+  "sensors": ["MODIS", "VIIRS_SNPP", "VIIRS_NOAA20", "VIIRS_NOAA21"],
+  "window": "24h",
+  "bbox": null,
+  "pollIntervalSeconds": 30
+}
+```
+
+`bbox` (optional) narrows the FIRMS region file; `pollIntervalSeconds` (10–86400) counts from the end
+of one run to the start of the next, so slow downloads never overlap.
+
+### Modes
+
+| Mode | FIRMS acquisition | Use |
+|---|---|---|
+| `realtime` (default at start) | on | live map |
+| `archive` | paused | user picked a date in the calendar |
+| `forecast` | paused | user works with the forecast; the data under it stays fixed |
+
+The frontend sends `PUT /mode` when the user switches views. Switching back to `realtime` fetches
+immediately. A pause ends on its own after `resumeAfterMinutes` (default `LIVE_PAUSE_RESUME_MINUTES`
+= 60; `null` = never), so a closed tab cannot stop acquisition for good. Re-sending the mode renews it.
+While paused, `POST /ingest` returns 409 and a scope change is stored but fetched only on resume.
+The mode is global for the server: one client pausing pauses it for everyone.
+
+### Report
+
+`GET /report?bbox=w,s,e,n&hours=24` reads `hotspots_all` (vegetation fires) for the area chosen in the
+frontend (or the ingest scope's bbox, or everything) and returns: totals (raw detections, `fireCells`
+= distinct cells of the ETL's fine grid `HARMONIZATION.fineGridDeg`, FRP), splits by confidence,
+satellite and origin, an hourly timeline with empty hours filled in, the 10 most active ~0.5° areas,
+and the acquisition state. These are not harmonized counts. Reload it on every `ingest` event.
 
 ### Live map updates
 
@@ -65,60 +121,10 @@ new EventSource(`${API}/api/live/events`).addEventListener('ingest', async (e) =
 });
 ```
 
-Old rows are purged after `LIVE_RETENTION_DAYS` and a scope change replaces what is ingested, so
-the client should drop features older than its time window (`properties.acq_datetime`) or reload
-the full collection from time to time (e.g. after `PUT /scope`).
-
-Scope body:
-
-```json
-{
-  "region": "Global",
-  "sensors": ["MODIS", "VIIRS_SNPP", "VIIRS_NOAA20", "VIIRS_NOAA21"],
-  "window": "24h",
-  "bbox": null,
-  "pollIntervalSeconds": 30
-}
-```
-
-This is also the default: the whole world, every 30 seconds. `bbox` (optional) narrows the FIRMS
-region file; `pollIntervalSeconds` is 10–86400 and counts from the end of one run to the start of
-the next, so slow downloads never overlap.
-
-### Modes
-
-| Mode | FIRMS acquisition | Use |
-|---|---|---|
-| `realtime` (default at start) | on | live map |
-| `archive` | paused | user picked a date in the calendar |
-| `forecast` | paused | user works with the forecast; the data under it stays fixed |
-
-The frontend sends `PUT /mode` when the user switches views. Switching back to `realtime` fetches
-immediately. A pause ends on its own after `resumeAfterMinutes` (default `LIVE_PAUSE_RESUME_MINUTES`
-= 60; `null` = never), so a closed tab cannot stop acquisition for good. Re-sending the mode renews it.
-While paused, `POST /ingest` returns 409 and a scope change is stored but fetched only on resume.
-The mode is global for the server: one client pausing pauses it for everyone.
-
-### Report
-
-`GET /report?bbox=w,s,e,n&hours=24` returns, for the area chosen in the frontend (or the ingest
-scope's bbox, or everything): totals (detections, active ~1 km cells, FRP), split by confidence and
-by satellite, an hourly timeline with empty hours filled in, the 10 most active ~0.5° areas, and the
-acquisition state. Reload it on every `ingest` event.
-
-## Harmonization
-
-Done in one SQL statement for every sensor (`src/live/repository.ts`):
-
-- confidence → `low | nominal | high` (MODIS 0–100: <30, 30–80, >80; VIIRS l/n/h),
-- satellite codes → `Terra | Aqua | SNPP | NOAA20 | NOAA21`,
-- `acq_date` + `acq_time` → one UTC timestamp,
-- position → cell of a common 0.01° (~1 km) grid.
-
-Situation and forecast work on **active grid cells**, not raw points, so a fire seen by three VIIRS
-satellites is not "bigger" than one seen by MODIS only. Re-ingesting overlapping files is idempotent
-(primary key on satellite + time + position). Rows older than `LIVE_RETENTION_DAYS` are purged;
-long-term history is the archive's job.
+`since` returns live rows only. Live rows disappear when the archive takes their day over or after
+`LIVE_RETENTION_DAYS`, and a scope change replaces what is ingested, so the client should drop
+features older than its time window (`properties.acq_datetime`) or reload the full collection from
+time to time (e.g. after `PUT /scope`).
 
 ## Forecast method (`centroid-drift-v1`)
 
@@ -139,11 +145,13 @@ A wind-aware model can replace it by implementing `SpreadPredictor`.
 ```
 src/
   index.ts, app.ts, config.ts      bootstrap, composition root
-  db/                              Database wrapper, schema
+  db/
+    database.ts, schema.ts         DuckDB wrapper; live table = ETL hotspot schema
+    catalog.ts                     archive (ETL Parquet) + live → view hotspots_all
   live/
-    domain.ts                      types, scope, grid constant
+    domain.ts                      types, scope, modes
     firms/source.ts                HotspotSource strategy + keyless FIRMS implementation
-    repository.ts                  all SQL (harmonize+insert, queries, scope, run log)
+    repository.ts                  NRT → ETL schema, queries over hotspots_all, scope, run log
     ingestService.ts, scheduler.ts ingest orchestration, polling loop
     modeController.ts              realtime / archive / forecast: starts and pauses polling
     reportService.ts               area report (SQL aggregates)
