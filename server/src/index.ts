@@ -4,7 +4,7 @@ import compress from '@fastify/compress';
 import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
 import Fastify from 'fastify';
-import { config, REPO_ROOT } from '../../shared/config.ts';
+import { config, REPO_ROOT } from './config.ts';
 import { apiRoutes } from './routes/api.ts';
 
 const app = Fastify({ logger: { level: 'info' } });
@@ -20,4 +20,4 @@ if (existsSync(webDist)) {
 }
 
 await app.listen({ port: config.port, host: '0.0.0.0' });
-app.log.info(`data source: ${config.useFixtures ? 'fixtures' : 'DuckDB over ' + config.processedDir}`);
+app.log.info(`data source: ${config.useFixtures ? 'fixtures' : 'DuckDB over ' + config.parquetDir}`);

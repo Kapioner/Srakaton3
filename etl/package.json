@@ -1,13 +1,22 @@
 {
-  "name": "@burning-calendar/etl",
+  "name": "@hbac/etl",
   "private": true,
-  "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "start": "tsx src/index.ts",
-    "typecheck": "tsc -p tsconfig.json"
+    "download": "node scripts/download-firms.mjs",
+    "normalize": "tsx src/normalize.ts",
+    "typecheck": "tsc --noEmit",
+    "harmonize": "tsx src/harmonize.ts",
+    "report": "tsx src/report.ts",
+    "download-world": "node scripts/download-firms-world.mjs"
   },
   "dependencies": {
-    "@duckdb/node-api": "^2.0.0-r.1"
+    "@duckdb/node-api": "^2.0.0-r.1",
+    "yauzl": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
   }
 }

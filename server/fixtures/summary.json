@@ -4,25 +4,27 @@
   "from": "2001-01-06",
   "to": "2025-12-31"
  },
- "total": 41564.4,
+ "unit": "Aqua-equivalent fire cell-days",
+ "total": 21829.5,
+ "rawDetections": 163067,
  "activeDays": 6535,
  "peakDay": {
-  "date": "2021-08-06",
-  "value": 932
+  "date": "2007-08-25",
+  "value": 339.6
  },
  "peakMonth": {
-  "year": 2007,
-  "month": 8,
-  "value": 2448.0
+  "year": 2001,
+  "month": 10,
+  "value": 1102.9
  },
  "peakYear": {
   "year": 2007,
-  "value": 5172.0
+  "value": 2340.5
  },
  "comparison": {
-  "periodValue": 5172.0,
-  "baselineMean": 1662.6,
-  "ratio": 3.11,
+  "periodValue": 2340.5,
+  "baselineMean": 873.2,
+  "ratio": 2.68,
   "rank": 1,
   "outOf": 25,
   "baselineYears": [

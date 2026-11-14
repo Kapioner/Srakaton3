@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { CalendarResponse, MetaResponse } from '../../shared/api.ts';
+import { FIRE_UNIT, type CalendarResponse, type MetaResponse } from '../../shared/api.ts';
 import { api } from './api.ts';
 import { Calendar } from './components/Calendar.tsx';
 
@@ -26,7 +26,7 @@ export function App() {
         {meta && (
           <span className="muted">
             {meta.countries.join(', ')} · {meta.dateRange.from} to {meta.dateRange.to} ·{' '}
-            {meta.sensors.map((s) => s.id).join(' + ')}
+            {meta.satellites.map((s) => s.satellite).join(' + ')}
           </span>
         )}
         <a href={api.exportCsvUrl({})}>Download CSV</a>
@@ -35,7 +35,7 @@ export function App() {
       {error && <p className="error">API error: {error}. Is the server running on port 3001?</p>}
 
       <section className="panel">
-        <h2>Harmonized fire activity (MODIS-equivalent active cells per month)</h2>
+        <h2>Harmonized fire activity per month ({calendar?.unit ?? FIRE_UNIT})</h2>
         {calendar ? <Calendar data={calendar} /> : !error && <p className="muted">Loading…</p>}
       </section>
     </div>

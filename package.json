@@ -2,6 +2,7 @@
   "name": "burning-calendar",
   "private": true,
   "version": "0.1.0",
+  "type": "module",
   "description": "Harmonized burning activity calendar from MODIS and VIIRS active fire hotspots",
   "workspaces": [
     "etl",
@@ -10,11 +11,15 @@
   ],
   "scripts": {
     "dev": "concurrently -k -n server,web -c yellow,cyan \"npm run dev -w server\" \"npm run dev -w web\"",
-    "etl": "npm run start -w etl",
-    "download": "node etl/scripts/download-firms.mjs",
     "build": "npm run build -w web",
     "start": "npm run start -w server",
-    "typecheck": "npm run typecheck -w etl && npm run typecheck -w server && npm run typecheck -w web"
+    "typecheck": "npm run typecheck -w etl && npm run typecheck -w server && npm run typecheck -w web",
+    "etl:download": "npm run download -w etl --",
+    "etl:download-world": "npm run download-world -w etl --",
+    "etl:normalize": "npm run normalize -w etl --",
+    "etl:harmonize": "npm run harmonize -w etl --",
+    "etl:report": "npm run report -w etl --",
+    "etl:all": "npm run etl:normalize && npm run etl:harmonize && npm run etl:report"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

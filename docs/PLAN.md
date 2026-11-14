@@ -26,44 +26,44 @@ Wszystko z zadania jest w tej liście. Elementy dodatkowe są dopiero w sekcji 8
 sample_data/<sensor>/*.csv
         │
         ▼
- etl/  (TypeScript + DuckDB)            ── uruchamiany ręcznie: npm run etl
-   1. load + unify schema
-   2. filter (type = 0)
-   3. grid + daily cells
-   4. calibration (overlap MODIS ↔ VIIRS)
+ etl/  (TypeScript + DuckDB)            ── npm run etl:all
+   normalize   CSV → wspólny schemat, Parquet year=/country=
+   harmonize   kalibracja k (satelita × klasa FRP) + agregat dzienny
+   report      raport HTML „przed i po”
         │
         ▼
- data/processed/            (w .gitignore; odtwarzalne z ETL)
-   hotspots.parquet          surowe, ujednolicone punkty (do CSV i mapy przy dużym zoomie)
-   daily_cells.parquet       komórka × dzień × sensor (podstawa wszystkich agregatów)
-   calibration.json          współczynniki harmonizacji
+ data/parquet/              (w .gitignore; odtwarzalne z ETL)
+   hotspots/year=/country=/   surowe, ujednolicone wykrycia (do CSV i mapy przy dużym zoomie)
+   harmonized/year=/          kratka 0,1° × dzień: h, h_modis, h_viirs, n_modis, n_viirs
+   calibration/k.parquet      współczynniki k + params.json
         │
         ▼
  server/  (Fastify + @duckdb/node-api, tylko odczyt)
-   /api/meta  /api/calendar  /api/summary  /api/grid  /api/points  /api/export.csv
+   /api/meta  /api/calendar  /api/summary  /api/series  /api/grid  /api/points  /api/export.csv
         │  JSON (małe agregaty) / strumień CSV
         ▼
  web/  (React + Vite, MapLibre + terra-draw, ECharts)
 ```
 
-Zakres danych ustawiamy w konfiguracji (`DATA_DIR`, `DATA_COUNTRIES`, `DATA_YEARS`), żeby ten sam kod działał dla całego świata.
+Zakres danych ustawiamy w konfiguracji (`DATA_COUNTRIES`, `DATA_YEARS`, `INPUT_DIR`, `OUTPUT_DIR` w `.env` albo flagach CLI), żeby ten sam kod działał dla całego świata.
 
 ---
 
-## 3. Harmonizacja: metoda v1
+## 3. Harmonizacja
 
-Pomiary na danych przykładowych (2023–2025, `type = 0`, kratki około 1 km na dzień):
-- VIIRS ma 3,1–3,8 raza więcej **punktów** niż MODIS;
-- po zliczeniu **kratek** różnica spada do 1,8–2,5 raza.
+Zaimplementowana w `etl/src/harmonization.ts` (z gałęzi etls). Pełny opis: CLAUDE.md, sekcja „Chosen method”. Zastąpiła pierwotną metodę v1 z tego planu (ery × miesiąc), bo lepiej zgadza się między sensorami.
 
-Sama siatka więc nie wystarcza i potrzebna jest kalibracja.
+- **Jednostka:** fire cell-day, czyli kratka 0,02° z co najmniej jednym wykryciem `type = 0` przez jednego satelitę w jednym dniu.
+- **Klasy wielkości pożaru** według sumy FRP (< 5, 5–10, 10–20, 20–40, ≥ 40 MW), bo stosunek VIIRS/MODIS zależy od wielkości pożaru.
+- **Kalibracja:** `k[satelita, klasa]` względem MODIS Aqua, liczona na okresie wspólnego działania, per kraj, ściągana do wartości globalnej.
+- **Łączenie** (Poisson MLE): `h = Σ n / Σ k` po satelitach, które latały danego dnia. Dodanie lub utrata satelity zmienia szum, a nie poziom.
+- **Wynik:** jednostka „Aqua-equivalent fire cell-days” w kratce 0,1° × dzień. `h_modis` i `h_viirs` to ta sama wielkość liczona tylko z jednej rodziny sensorów.
 
-**Kroki:**
+**Walidacja na Grecji** (`npm run etl:harmonize`): w latach 2012–2025 `h_modis` i `h_viirs` różnią się średnio o około 6% rocznie. Surowe liczby wykryć skaczą z 2 651 (2011) do 10 018 (2012), a `h` tego skoku nie ma. Raport z wykresami: `npm run etl:report`.
 
-1. **Wspólny schemat** wszystkich sensorów:
+**Do sprawdzenia:** lata 2000–2002, gdy latał tylko Terra (przed Aqua). Wartość `h` dla 2001 roku (2 110 wobec 520 w 2002) wygląda na zawyżoną przez współczynnik Terra; październik 2001 wychodzi jako najwyższy miesiąc całej serii.
 
-   | Kolumna | Opis |
-   |---|---|
+---|---|
    | `lat`, `lon` | współrzędne |
    | `acq_date` | data |
    | `acq_time` | godzina UTC, HHMM |
@@ -120,15 +120,15 @@ Wszystkie endpointy przyjmują `bbox=minLon,minLat,maxLon,maxLat`, `from=YYYY-MM
 
 | Endpoint | Zwraca |
 |---|---|
-| `GET /api/meta` | zakres dat, bbox danych, listę sensorów i ery, współczynniki kalibracji |
-| `GET /api/calendar?granularity=month\|day&metric=harmonized\|raw_points\|raw_cells` | `[{year, month, [day], value, anomaly, rank}]` oraz `baseline` (średnia i odchylenie per miesiąc) |
+| `GET /api/meta` | zakres dat, bbox danych, satelity, parametry harmonizacji, współczynniki k i zgodność sensorów |
+| `GET /api/calendar?granularity=month\|day&metric=h\|h_modis\|h_viirs\|raw` | `[{year, month, [day], value, anomaly, rank}]` oraz `baseline` (średnia i odchylenie per miesiąc) |
 | `GET /api/summary` | sumy, najlepszy miesiąc i rok, porównanie z bazą, dane do tekstu z wnioskiem |
-| `GET /api/series?by=year\|month` | szereg roczny i miesięczny: zharmonizowany oraz surowy per sensor (wykres metodologiczny) |
-| `GET /api/grid?res=0.05\|0.1` | GeoJSON zagregowanych kratek z liczbą wykryć (mapa) |
+| `GET /api/series?by=year\|month` | szereg roczny i miesięczny: `h`, `h_modis`, `h_viirs` i surowe `n_modis`, `n_viirs` (wykres metodologiczny) |
+| `GET /api/grid?res=0.1\|0.25\|0.5` | GeoJSON kratek z `h`, liczbą wykryć i dni aktywnych (mapa) |
 | `GET /api/points?limit=50000` | surowe punkty jako GeoJSON (mapa przy dużym zoomie, z limitem) |
 | `GET /api/export.csv` | **strumień** ujednoliconych hotspotów z wyszukiwania |
 
-**Najpierw ustalamy przykładowe odpowiedzi JSON** (`server/fixtures/*.json`), żeby frontend mógł pracować na mockach, zanim gotowe będzie ETL.
+Typy: `shared/api.ts`. Przykładowe odpowiedzi (`server/fixtures/*.json`) generuje z wyjścia ETL `npm run fixtures -w server`; serwer zwraca je, dopóki `USE_FIXTURES=1`.
 
 ---
 
@@ -164,8 +164,8 @@ Cztery ścieżki równoległe po wspólnym kroku 0:
 | # | Etap | Ścieżka | Czas | Wynik |
 |---|---|---|---|---|
 | 0 | Szkielet monorepo, konfiguracja, kontrakt API i fixtures | wszyscy | 1 h | `npm run dev` uruchamia server i web, mocki odpowiadają |
-| 1 | ETL: schemat, filtr, siatka, `daily_cells`, Parquet | **A (dane)** | 3 h | `npm run etl` w kilka sekund dla Grecji |
-| 2 | Kalibracja i walidacja (współczynniki, wykres przed i po, znane pożary) | **A** | 2–3 h | `calibration.json`, liczby i wykres na slajd |
+| 1 | ETL: schemat, filtr, siatka, Parquet | **A (dane)** | gotowe | `npm run etl:all` w kilka sekund dla Grecji |
+| 2 | Kalibracja i walidacja (współczynniki, wykres przed i po, znane pożary) | **A** | gotowe; do sprawdzenia lata tylko z Terra | `calibration/k.parquet`, raport HTML |
 | 3 | API: endpointy na DuckDB, streaming CSV | **B (backend)** | 3–4 h | endpointy z sekcji 4 na prawdziwych danych |
 | 4 | Frontend: mapa, wybór regionu, kalendarz, wykresy, pobieranie | **C (frontend)** | 6–8 h | ekran z sekcji 5, najpierw na mockach |
 | 5 | Tekst z wnioskiem, anomalie i ranking | B + C | 2 h | tekst z wnioskiem na ekranie |
@@ -183,24 +183,28 @@ Cztery ścieżki równoległe po wspólnym kroku 0:
 
 ```
 etl/
-  scripts/download-firms.mjs      pobieranie danych (gotowe)
-  src/config.ts                   DATA_DIR, kraje, lata, rozdzielczość siatki
-  src/load.ts                     CSV → wspólny schemat (DuckDB SQL)
-  src/grid.ts                     daily_cells
-  src/calibrate.ts                współczynniki i raport walidacji
-  src/index.ts                    pipeline
+  scripts/download-firms.mjs          pobieranie CSV dla jednego kraju
+  scripts/download-firms-world.mjs    archiwa ZIP dla całego świata
+  src/config.ts                       zakres danych (kraje, lata, katalogi)
+  src/sources.ts, sql.ts              wyszukiwanie plików, CSV → wspólny schemat
+  src/normalize.ts                    krok 1: Parquet hotspots/
+  src/harmonization.ts, harmonize.ts  krok 2: kalibracja k i harmonized/
+  src/report.ts                       krok 3: raport HTML
 server/
-  src/index.ts                    Fastify, CORS, kompresja, statyczne pliki web/dist
-  src/db.ts                       instancja DuckDB, widoki na Parquet
-  src/queries/*.ts                calendar, summary, series, grid, points, export
-  src/params.ts                   walidacja bbox i dat
-  fixtures/*.json                 przykładowe odpowiedzi dla frontu
+  src/index.ts                        Fastify, CORS, kompresja, statyczne pliki web/dist
+  src/config.ts                       OUTPUT_DIR, API_PORT, USE_FIXTURES
+  src/db.ts                           instancja DuckDB
+  src/queries/*.ts                    (etap 3) calendar, summary, series, grid, points, export
+  src/params.ts                       walidacja bbox i dat
+  scripts/make-fixtures.ts            fixtures z wyjścia ETL
+  fixtures/*.json                     przykładowe odpowiedzi dla frontu
+shared/api.ts                         kontrakt API (typy dla server i web)
 web/
-  src/api.ts                      klient API (z przełącznikiem na mocki)
+  src/api.ts                          klient API
   src/components/Map.tsx, Calendar.tsx, YearBars.tsx, Seasonality.tsx,
                  Insight.tsx, Methodology.tsx, Controls.tsx
 docs/PLAN.md
-package.json                      npm workspaces: etl, server, web
+package.json                          npm workspaces: etl, server, web
 ```
 
 ---
@@ -220,6 +224,6 @@ package.json                      npm workspaces: etl, server, web
 | Ryzyko | Co robimy |
 |---|---|
 | `@duckdb/node-api` sprawia problemy na Windowsie | sprawdzamy w kroku 0; awaryjnie paczka `duckdb` albo ETL w Pythonie (DuckDB) |
-| Kalibracja wychodzi niestabilna | uproszczenie (jeden współczynnik na erę); na slajdzie uczciwie opisujemy ograniczenia |
+| Kalibracja wychodzi niestabilna | uproszczenie liczby klas FRP; na slajdzie uczciwie opisujemy ograniczenia |
 | Za mało czasu na front | priorytet: kalendarz, tekst z wnioskiem, CSV; mapa może pokazywać tylko bbox i kratki |
 | Prezentacja na ostatnią chwilę | osoba D zaczyna szkic w sobotę i co kilka godzin zbiera zrzuty ekranu |

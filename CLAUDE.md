@@ -39,16 +39,18 @@ Target users: emergency managers.
 
 ## Implementation plan
 
-The full plan (MVP scope, harmonization method v1, API contract, screen layout, phases, risks) is in [docs/PLAN.md](docs/PLAN.md). Follow it unless the user decides otherwise.
+The full plan (MVP scope, API contract, screen layout, phases, risks) is in [docs/PLAN.md](docs/PLAN.md). Follow it unless the user decides otherwise. The harmonization method is the one described below under "Chosen method" (it replaced the plan's original v1).
 
-- Dev data: `sample_data/<sensor>/<sensor>_<year>_Greece.csv`. MODIS covers 2000–2025, VIIRS S-NPP 2012–2025, VIIRS NOAA-20 2018–2025. NOAA-21 is not available in the FIRMS per-country archive. Download more with `node etl/scripts/download-firms.mjs`.
-- ETL output goes to `data/processed/`, which is git-ignored.
+- Dev data: `sample_data/<sensor>/<sensor>_<year>_Greece.csv`. MODIS covers 2000–2025, VIIRS S-NPP 2012–2025, VIIRS NOAA-20 2018–2025. NOAA-21 is not available in the FIRMS per-country archive. Download more with `npm run etl:download -- --country <Name>`.
+- ETL output goes to `data/parquet/` (git-ignored); the API server reads the same folder (`OUTPUT_DIR`). Both read `<repo>/.env` (see `.env.example`).
+- API contract: `shared/api.ts` (types used by server and web). `server/fixtures/` holds sample responses generated from the ETL output with `npm run fixtures -w server`; the server serves them while `USE_FIXTURES=1`.
+- Dev loop: `npm run etl:all` once, then `npm run dev` (API on 3001, web on 5173). The frontend lives in `web/` only.
 
 ## Tech stack (decided)
 
 - **Monorepo:** `etl/`, `server/`, `web/`.
 - **TypeScript** everywhere (pragmatic, non-strict is fine; backend run with `tsx`).
-- **ETL (`etl/`):** TypeScript + DuckDB (`@duckdb/node-api`). Converts raw CSV/ZIP → harmonized Parquet + pre-aggregates.
+- **ETL (`etl/`):** TypeScript + DuckDB (`@duckdb/node-api`). Converts raw (already extracted) CSVs → harmonized Parquet + pre-aggregates.
 - **Backend (`server/`):** Fastify + `@duckdb/node-api`. Read-only queries over Parquet; one DuckDB instance per process.
 - **Frontend (`web/`):** React + Vite, **MapLibre GL** (via `react-map-gl`; basemap OpenFreeMap or Carto dark-matter; region drawing with `terra-draw`) and **Apache ECharts** (`echarts-for-react`).
 - Optional later: deck.gl (hexagon/H3/3D layers), PostgreSQL + PostGIS for pre-aggregates/user data (DuckDB `postgres` extension can write there). Keep DB access behind a `db/queries` layer so the engine can be swapped.
@@ -63,7 +65,7 @@ The full plan (MVP scope, harmonization method v1, API contract, screen layout, 
 
 ## Dataset
 
-- Source: NASA FIRMS active-fire CSVs, one **ZIP per year containing all countries** (~400 MB for recent years, older years much smaller), ~25 years (2000 → present), ~6 GB total.
+- Source: NASA FIRMS active-fire CSVs, one **ZIP per year containing all countries** (~400 MB for recent years, older years much smaller), extracted manually to `data/<sensor>/<year>/*.csv` before the ETL runs (the ETL reads CSVs only, no ZIP handling), ~25 years (2000 → present), ~6 GB total.
 - Files per country and sensor, e.g. `viirs-jpss1_2025_Greece.csv`, `viirs-snpp_...`, `modis_...` (newer years also `viirs-jpss2_...`). The ETL detects the sensor from the file name and/or the `instrument`/`satellite` columns.
 - VIIRS columns: `latitude,longitude,bright_ti4,scan,track,acq_date,acq_time,satellite,instrument,confidence,version,bright_ti5,frp,daynight,type`. MODIS uses `brightness`/`bright_t31` and numeric `confidence` (0–100).
 
@@ -81,7 +83,7 @@ The full plan (MVP scope, harmonization method v1, API contract, screen layout, 
 
 - **Development region: Greece**, all years. Small (tens of MB), strong fire seasonality, big fire years (2007, 2021, 2023), includes static industrial sources to test filtering. Poland may be added as a second demo country.
 - The solution **must stay ready for the whole world**. Data scope is config, not code, e.g. `DATA_COUNTRIES=Greece` (dev) vs `DATA_COUNTRIES=*`, `DATA_YEARS=2000-2025`.
-- ETL is **incremental, ZIP by ZIP**, writing Parquet partitioned by `year=/country=`. Adding a year or country means adding a partition.
+- ETL is **incremental, year by year / country by country**, writing Parquet partitioned by `year=/country=`. Adding a year or country means adding a partition.
 - For the demo, prove scalability by running 1–2 full global years (or everything) and reporting timings (ETL per year, global calendar query, CSV export).
 
 ## Harmonization rules (MODIS + VIIRS)
@@ -90,3 +92,22 @@ The full plan (MVP scope, harmonization method v1, API contract, screen layout, 
 - Map confidence to common classes: VIIRS `l/n/h` ↔ MODIS 0–100 (e.g. <30 low, 30–80 nominal, >80 high).
 - Raw counts are **not comparable**: VIIRS (375 m) detects several times more than MODIS (1 km), and the number of satellites grows over time (2000 Terra → 2002 +Aqua → 2012 +S-NPP → 2018 +NOAA-20 → 2024 +NOAA-21). Summing raw points creates a fake upward trend.
 - Approach: aggregate to a common grid (~1 km or H3) and count **active cells per day** (deduplicating detections across satellites), and/or calibrate a MODIS↔VIIRS ratio over the overlap period (2012 → present). The goal: after harmonization the sensor of origin no longer matters.
+
+### Chosen method (implemented in `etl/src/harmonization.ts`)
+
+**FRP-stratified, multi-satellite calibration to an Aqua-equivalent fire cell-day:**
+1. Unit = fire cell-day: 0.02° cell with ≥1 type-0 detection by one satellite on one day (removes the pixel-size effect).
+2. Each satellite's cell-day gets an FRP class by its summed FRP (<5, 5–10, 10–20, 20–40, ≥40 MW). The VIIRS/MODIS ratio depends on fire size (small fires are VIIRS-only), so a single constant factor under-estimates big-fire years by 20–40 %.
+3. `k[satellite, class]` = cell-days(satellite) / cell-days(Aqua) over their overlap, **per country**, shrunk towards the global k (α = 50).
+4. Combination per day: `h = Σ_class Σ_sat n / Σ_sat k` over satellites flying that day (Poisson MLE). Adding or losing a satellite changes noise, not level. `h_modis` / `h_viirs` = the same estimate from one sensor family only.
+
+Evidence (Greece): one constant factor → 15 % yearly error, 2021/2023 under-estimated by 21–33 %. Stratified, fitted on 2012–2020 only → 2021/2023 predicted within 0–9 %. Final MODIS-only vs VIIRS-only agreement 2012–2025: ~6 % per year. A coarser grid (0.05–0.1°) did not help. Globally (2025) per-class k varies far less between countries than the overall ratio (2.9–6.9).
+
+Known limits: Terra's orbit drifts after ~2020 (global 2025 k ≈ 0.3–0.5 vs ~0.8 historically), so time-varying k for Terra is a possible improvement. After Aqua ends, new satellites need chained calibration (via S-NPP/NOAA-20); not implemented yet.
+
+## ETL commands
+
+- `npm run etl:normalize`: raw CSV → `data/parquet/hotspots/year=/country=/` (common schema, nothing dropped, incremental).
+- `npm run etl:harmonize`: → `data/parquet/calibration/k.parquet` + `data/parquet/harmonized/year=/part_0.parquet` (0.1° cell × day: `h`, `h_modis`, `h_viirs`, `n_modis`, `n_viirs`, `country`). The calendar and map use `h`.
+- `npm run etl:report`: → `data/reports/etl-report-<scope>.html` (before/after charts, calendar, k table).
+- `npm run etl:all` runs all three. Scope flags: `--countries Greece|*`, `--years 2000-2025`, `--input`, `--output`, `--force`, `--recalibrate`.

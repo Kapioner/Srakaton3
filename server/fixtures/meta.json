@@ -5,258 +5,155 @@
  },
  "bbox": [
   19.6566,
-  34.8556,
+  34.8557,
   28.2316,
   41.747
  ],
  "countries": [
   "Greece"
  ],
- "sensors": [
+ "satellites": [
   {
-   "id": "modis",
-   "instrument": "MODIS",
-   "satellites": [
-    "Aqua",
-    "Terra"
-   ],
-   "from": "2001-01-06",
+   "satellite": "Terra",
+   "sensor": "MODIS",
+   "from": "2000-11-01",
+   "to": "2025-12-21"
+  },
+  {
+   "satellite": "Aqua",
+   "sensor": "MODIS",
+   "from": "2002-07-04",
    "to": "2025-12-30"
   },
   {
-   "id": "viirs-snpp",
-   "instrument": "VIIRS",
-   "satellites": [
-    "N"
-   ],
+   "satellite": "S-NPP",
+   "sensor": "VIIRS",
    "from": "2012-01-20",
    "to": "2025-12-31"
   },
   {
-   "id": "viirs-jpss1",
-   "instrument": "VIIRS",
-   "satellites": [
-    "N20"
-   ],
+   "satellite": "NOAA-20",
+   "sensor": "VIIRS",
    "from": "2018-04-01",
    "to": "2025-12-31"
   }
  ],
- "eras": [
-  {
-   "id": "E1",
-   "fromYear": 2001,
-   "toYear": 2011,
-   "sensors": [
-    "modis"
-   ]
-  },
-  {
-   "id": "E2",
-   "fromYear": 2012,
-   "toYear": 2017,
-   "sensors": [
-    "modis",
-    "viirs-snpp"
-   ]
-  },
-  {
-   "id": "E3",
-   "fromYear": 2018,
-   "toYear": 2025,
-   "sensors": [
-    "modis",
-    "viirs-snpp",
-    "viirs-jpss1"
-   ]
-  }
- ],
- "grid": {
-  "resolutionDeg": 0.01
- },
- "calibration": {
-  "unit": "modis_equivalent_cells",
+ "harmonization": {
+  "unit": "Aqua-equivalent fire cell-days",
+  "reference": "Aqua",
+  "fineGridDeg": 0.02,
+  "outGridDeg": 0.1,
+  "frpEdges": [
+   5,
+   10,
+   20,
+   40
+  ],
   "factors": [
    {
-    "era": "E1",
-    "month": 1,
-    "factor": 1.0
+    "satellite": "Aqua",
+    "cls": 0,
+    "k": 1
    },
    {
-    "era": "E1",
-    "month": 2,
-    "factor": 1.0
+    "satellite": "Aqua",
+    "cls": 1,
+    "k": 1
    },
    {
-    "era": "E1",
-    "month": 3,
-    "factor": 1.0
+    "satellite": "Aqua",
+    "cls": 2,
+    "k": 1
    },
    {
-    "era": "E1",
-    "month": 4,
-    "factor": 1.0
+    "satellite": "Aqua",
+    "cls": 3,
+    "k": 1
    },
    {
-    "era": "E1",
-    "month": 5,
-    "factor": 1.0
+    "satellite": "Aqua",
+    "cls": 4,
+    "k": 1
    },
    {
-    "era": "E1",
-    "month": 6,
-    "factor": 1.0
+    "satellite": "NOAA-20",
+    "cls": 0,
+    "k": 30.843
    },
    {
-    "era": "E1",
-    "month": 7,
-    "factor": 1.0
+    "satellite": "NOAA-20",
+    "cls": 1,
+    "k": 3.019
    },
    {
-    "era": "E1",
-    "month": 8,
-    "factor": 1.0
+    "satellite": "NOAA-20",
+    "cls": 2,
+    "k": 1.994
    },
    {
-    "era": "E1",
-    "month": 9,
-    "factor": 1.0
+    "satellite": "NOAA-20",
+    "cls": 3,
+    "k": 1.541
    },
    {
-    "era": "E1",
-    "month": 10,
-    "factor": 1.0
+    "satellite": "NOAA-20",
+    "cls": 4,
+    "k": 1.166
    },
    {
-    "era": "E1",
-    "month": 11,
-    "factor": 1.0
+    "satellite": "S-NPP",
+    "cls": 0,
+    "k": 31.768
    },
    {
-    "era": "E1",
-    "month": 12,
-    "factor": 1.0
+    "satellite": "S-NPP",
+    "cls": 1,
+    "k": 3.215
    },
    {
-    "era": "E2",
-    "month": 1,
-    "factor": 0.179
+    "satellite": "S-NPP",
+    "cls": 2,
+    "k": 1.929
    },
    {
-    "era": "E2",
-    "month": 2,
-    "factor": 0.244
+    "satellite": "S-NPP",
+    "cls": 3,
+    "k": 1.462
    },
    {
-    "era": "E2",
-    "month": 3,
-    "factor": 0.2067
+    "satellite": "S-NPP",
+    "cls": 4,
+    "k": 1.182
    },
    {
-    "era": "E2",
-    "month": 4,
-    "factor": 0.2213
+    "satellite": "Terra",
+    "cls": 0,
+    "k": 0.625
    },
    {
-    "era": "E2",
-    "month": 5,
-    "factor": 0.2951
+    "satellite": "Terra",
+    "cls": 1,
+    "k": 0.777
    },
    {
-    "era": "E2",
-    "month": 6,
-    "factor": 0.359
+    "satellite": "Terra",
+    "cls": 2,
+    "k": 0.752
    },
    {
-    "era": "E2",
-    "month": 7,
-    "factor": 0.3373
+    "satellite": "Terra",
+    "cls": 3,
+    "k": 0.764
    },
    {
-    "era": "E2",
-    "month": 8,
-    "factor": 0.3617
-   },
-   {
-    "era": "E2",
-    "month": 9,
-    "factor": 0.3048
-   },
-   {
-    "era": "E2",
-    "month": 10,
-    "factor": 0.2868
-   },
-   {
-    "era": "E2",
-    "month": 11,
-    "factor": 0.2931
-   },
-   {
-    "era": "E2",
-    "month": 12,
-    "factor": 0.188
-   },
-   {
-    "era": "E3",
-    "month": 1,
-    "factor": 0.1247
-   },
-   {
-    "era": "E3",
-    "month": 2,
-    "factor": 0.1671
-   },
-   {
-    "era": "E3",
-    "month": 3,
-    "factor": 0.1073
-   },
-   {
-    "era": "E3",
-    "month": 4,
-    "factor": 0.0915
-   },
-   {
-    "era": "E3",
-    "month": 5,
-    "factor": 0.1338
-   },
-   {
-    "era": "E3",
-    "month": 6,
-    "factor": 0.1874
-   },
-   {
-    "era": "E3",
-    "month": 7,
-    "factor": 0.3738
-   },
-   {
-    "era": "E3",
-    "month": 8,
-    "factor": 0.4024
-   },
-   {
-    "era": "E3",
-    "month": 9,
-    "factor": 0.2118
-   },
-   {
-    "era": "E3",
-    "month": 10,
-    "factor": 0.1702
-   },
-   {
-    "era": "E3",
-    "month": 11,
-    "factor": 0.1713
-   },
-   {
-    "era": "E3",
-    "month": 12,
-    "factor": 0.0867
+    "satellite": "Terra",
+    "cls": 4,
+    "k": 0.775
    }
-  ]
+  ],
+  "sensorAgreement": {
+   "years": 14,
+   "meanAbsLogRatio": 0.055
+  }
  }
 }

@@ -156,7 +156,7 @@
     "sensor": "MODIS",
     "satellite": "Terra",
     "confidence": "high",
-    "frp": 1468.0,
+    "frp": 1468,
     "daynight": "D"
    }
   },
@@ -534,7 +534,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 939.83,
     "daynight": "N"
@@ -555,7 +555,7 @@
     "sensor": "MODIS",
     "satellite": "Aqua",
     "confidence": "high",
-    "frp": 935.0,
+    "frp": 935,
     "daynight": "D"
    }
   },
@@ -743,7 +743,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 730.52,
     "daynight": "N"
@@ -857,7 +857,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 662.54,
     "daynight": "D"
@@ -944,15 +944,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.81631,
-     40.92139
+     25.82014,
+     40.92962
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 607.03,
     "daynight": "D"
@@ -971,7 +971,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 607.03,
     "daynight": "D"
@@ -982,15 +982,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.82014,
-     40.92962
+     25.81631,
+     40.92139
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 607.03,
     "daynight": "D"
@@ -1049,7 +1049,7 @@
     "sensor": "MODIS",
     "satellite": "Aqua",
     "confidence": "high",
-    "frp": 584.0,
+    "frp": 584,
     "daynight": "N"
    }
   },
@@ -1134,15 +1134,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.05871,
-     40.98433
+     26.06276,
+     40.97993
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 509.48,
     "daynight": "N"
@@ -1153,15 +1153,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.06276,
-     40.97993
+     26.05871,
+     40.98433
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 509.48,
     "daynight": "N"
@@ -1286,6 +1286,25 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
+     22.74263,
+     38.31749
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1147",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "high",
+    "frp": 460.29,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
      22.74232,
      38.32133
     ]
@@ -1294,7 +1313,7 @@
     "date": "2023-08-22",
     "time": "1147",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 460.29,
     "daynight": "D"
@@ -1313,27 +1332,8 @@
     "date": "2023-08-22",
     "time": "1147",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
-    "frp": 460.29,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     22.74263,
-     38.31749
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1147",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "high",
     "frp": 460.29,
     "daynight": "D"
    }
@@ -1353,7 +1353,7 @@
     "sensor": "MODIS",
     "satellite": "Aqua",
     "confidence": "high",
-    "frp": 460.0,
+    "frp": 460,
     "daynight": "N"
    }
   },
@@ -1408,7 +1408,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 446.03,
     "daynight": "D"
@@ -1427,7 +1427,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 446.03,
     "daynight": "D"
@@ -1476,15 +1476,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.86373,
-     40.90774
+     25.86481,
+     40.91117
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 436.8,
     "daynight": "N"
@@ -1495,15 +1495,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.86481,
-     40.91117
+     25.86373,
+     40.90774
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 436.8,
     "daynight": "N"
@@ -1541,7 +1541,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 430.21,
     "daynight": "D"
@@ -1560,7 +1560,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 430.21,
     "daynight": "D"
@@ -1579,7 +1579,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 430.21,
     "daynight": "D"
@@ -1609,16 +1609,16 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.82278,
-     40.93567
+     25.81445,
+     40.94008
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "low",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
     "frp": 419.72,
     "daynight": "D"
    }
@@ -1628,16 +1628,16 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.81445,
-     40.94008
+     25.82278,
+     40.93567
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
+    "satellite": "S-NPP",
+    "confidence": "low",
     "frp": 419.72,
     "daynight": "D"
    }
@@ -1655,7 +1655,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 419.72,
     "daynight": "D"
@@ -1685,16 +1685,16 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.08778,
-     40.94665
+     26.08879,
+     40.94321
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
-    "confidence": "low",
+    "satellite": "NOAA-20",
+    "confidence": "nominal",
     "frp": 394.02,
     "daynight": "D"
    }
@@ -1712,7 +1712,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 394.02,
     "daynight": "D"
@@ -1723,16 +1723,16 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.08879,
-     40.94321
+     26.08778,
+     40.94665
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
-    "confidence": "nominal",
+    "satellite": "NOAA-20",
+    "confidence": "low",
     "frp": 394.02,
     "daynight": "D"
    }
@@ -1771,7 +1771,7 @@
     "sensor": "MODIS",
     "satellite": "Terra",
     "confidence": "high",
-    "frp": 391.0,
+    "frp": 391,
     "daynight": "D"
    }
   },
@@ -1856,25 +1856,6 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.81356,
-     40.92581
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1008",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "low",
-    "frp": 367.06,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
      25.80663,
      40.92366
     ]
@@ -1883,7 +1864,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 367.06,
     "daynight": "D"
@@ -1902,8 +1883,27 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
+    "frp": 367.06,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.81356,
+     40.92581
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1008",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "low",
     "frp": 367.06,
     "daynight": "D"
    }
@@ -2016,7 +2016,7 @@
     "date": "2023-08-22",
     "time": "0114",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 355.26,
     "daynight": "N"
@@ -2035,7 +2035,7 @@
     "date": "2023-08-22",
     "time": "0114",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 355.26,
     "daynight": "N"
@@ -2054,7 +2054,7 @@
     "date": "2023-08-22",
     "time": "0114",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 355.26,
     "daynight": "N"
@@ -2084,15 +2084,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.08436,
-     41.08856
+     26.09031,
+     41.0904
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 350.99,
     "daynight": "D"
@@ -2103,15 +2103,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.09031,
-     41.0904
+     26.08436,
+     41.08856
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 350.99,
     "daynight": "D"
@@ -2187,7 +2187,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 336.34,
     "daynight": "D"
@@ -2206,28 +2206,9 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 336.34,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     25.81999,
-     40.9278
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1008",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "low",
-    "frp": 335.74,
     "daynight": "D"
    }
   },
@@ -2244,7 +2225,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 335.74,
     "daynight": "D"
@@ -2263,7 +2244,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 335.74,
     "daynight": "D"
@@ -2274,15 +2255,34 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.14247,
-     41.03461
+     25.81999,
+     40.9278
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1008",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "low",
+    "frp": 335.74,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     26.14136,
+     41.03116
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 334.95,
     "daynight": "N"
@@ -2301,7 +2301,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 334.95,
     "daynight": "N"
@@ -2312,15 +2312,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.14136,
-     41.03116
+     26.14247,
+     41.03461
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 334.95,
     "daynight": "N"
@@ -2369,25 +2369,6 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.08376,
-     40.94229
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1057",
-    "sensor": "VIIRS",
-    "satellite": "N20",
-    "confidence": "nominal",
-    "frp": 328.3,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
      26.0827,
      40.94572
     ]
@@ -2396,26 +2377,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
-    "confidence": "low",
-    "frp": 328.3,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     26.07867,
-     40.94136
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1057",
-    "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "low",
     "frp": 328.3,
     "daynight": "D"
@@ -2434,7 +2396,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 328.3,
     "daynight": "D"
@@ -2445,18 +2407,37 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.04084,
-     40.96701
+     26.07867,
+     40.94136
     ]
    },
    "properties": {
     "date": "2023-08-22",
-    "time": "0115",
+    "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
+    "confidence": "low",
+    "frp": 328.3,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     26.08376,
+     40.94229
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1057",
+    "sensor": "VIIRS",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
-    "frp": 323.3,
-    "daynight": "N"
+    "frp": 328.3,
+    "daynight": "D"
    }
   },
   {
@@ -2472,7 +2453,7 @@
     "date": "2023-08-22",
     "time": "0115",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 323.3,
     "daynight": "N"
@@ -2491,7 +2472,26 @@
     "date": "2023-08-22",
     "time": "0115",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
+    "confidence": "nominal",
+    "frp": 323.3,
+    "daynight": "N"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     26.04084,
+     40.96701
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "0115",
+    "sensor": "VIIRS",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 323.3,
     "daynight": "N"
@@ -2540,25 +2540,6 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.18849,
-     41.08865
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "0025",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
-    "frp": 314.18,
-    "daynight": "N"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
      26.18456,
      41.09305
     ]
@@ -2567,26 +2548,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "high",
-    "frp": 314.18,
-    "daynight": "N"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     26.18335,
-     41.08961
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "0025",
-    "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 314.18,
     "daynight": "N"
@@ -2605,7 +2567,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 314.18,
     "daynight": "N"
@@ -2616,18 +2578,37 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.82876,
-     40.92533
+     26.18849,
+     41.08865
     ]
    },
    "properties": {
     "date": "2023-08-22",
-    "time": "1008",
+    "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
-    "frp": 314.04,
-    "daynight": "D"
+    "frp": 314.18,
+    "daynight": "N"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     26.18335,
+     41.08961
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "0025",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "high",
+    "frp": 314.18,
+    "daynight": "N"
    }
   },
   {
@@ -2643,8 +2624,27 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
+    "frp": 314.04,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.82876,
+     40.92533
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1008",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
     "frp": 314.04,
     "daynight": "D"
    }
@@ -2662,7 +2662,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 314.04,
     "daynight": "D"
@@ -2681,7 +2681,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 312.01,
     "daynight": "N"
@@ -2700,7 +2700,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 312.01,
     "daynight": "N"
@@ -2719,7 +2719,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 312.01,
     "daynight": "N"
@@ -2730,16 +2730,16 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     22.7328,
-     38.35354
+     22.72663,
+     38.35221
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
-    "confidence": "nominal",
+    "satellite": "NOAA-20",
+    "confidence": "high",
     "frp": 305.73,
     "daynight": "D"
    }
@@ -2757,7 +2757,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "low",
     "frp": 305.73,
     "daynight": "D"
@@ -2776,7 +2776,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "low",
     "frp": 305.73,
     "daynight": "D"
@@ -2787,16 +2787,16 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     22.72663,
-     38.35221
+     22.7328,
+     38.35354
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
-    "confidence": "high",
+    "satellite": "NOAA-20",
+    "confidence": "nominal",
     "frp": 305.73,
     "daynight": "D"
    }
@@ -2814,27 +2814,8 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
-    "frp": 303.42,
-    "daynight": "N"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     26.08469,
-     40.99061
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "0025",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "high",
     "frp": 303.42,
     "daynight": "N"
    }
@@ -2852,7 +2833,26 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
+    "confidence": "high",
+    "frp": 303.42,
+    "daynight": "N"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     26.08469,
+     40.99061
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "0025",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 303.42,
     "daynight": "N"
@@ -2871,7 +2871,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 302.31,
     "daynight": "N"
@@ -2890,7 +2890,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 302.31,
     "daynight": "N"
@@ -2909,7 +2909,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 302.31,
     "daynight": "N"
@@ -3023,7 +3023,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 289.96,
     "daynight": "D"
@@ -3042,7 +3042,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 289.96,
     "daynight": "D"
@@ -3061,7 +3061,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 289.96,
     "daynight": "D"
@@ -3072,15 +3072,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.79429,
-     40.92144
+     25.78833,
+     40.91956
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 289.81,
     "daynight": "D"
@@ -3099,7 +3099,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 289.81,
     "daynight": "D"
@@ -3110,15 +3110,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.78833,
-     40.91956
+     25.79429,
+     40.92144
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 289.81,
     "daynight": "D"
@@ -3137,7 +3137,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 279.41,
     "daynight": "D"
@@ -3156,7 +3156,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 279.41,
     "daynight": "D"
@@ -3213,7 +3213,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 277.59,
     "daynight": "D"
@@ -3232,7 +3232,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 277.59,
     "daynight": "D"
@@ -3348,7 +3348,7 @@
     "sensor": "MODIS",
     "satellite": "Aqua",
     "confidence": "high",
-    "frp": 265.0,
+    "frp": 265,
     "daynight": "D"
    }
   },
@@ -3365,7 +3365,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 262.88,
     "daynight": "D"
@@ -3395,15 +3395,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.53053,
-     41.15975
+     25.53531,
+     41.16471
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1148",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 259.77,
     "daynight": "D"
@@ -3414,15 +3414,34 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.53531,
-     41.16471
+     25.53053,
+     41.15975
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1148",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
+    "confidence": "low",
+    "frp": 259.77,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.5297,
+     41.16428
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1148",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 259.77,
     "daynight": "D"
@@ -3441,27 +3460,8 @@
     "date": "2023-08-22",
     "time": "1148",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
-    "frp": 259.77,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     25.5297,
-     41.16428
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1148",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "low",
     "frp": 259.77,
     "daynight": "D"
    }
@@ -3479,7 +3479,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 259.58,
     "daynight": "D"
@@ -3498,7 +3498,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 259.58,
     "daynight": "D"
@@ -3517,7 +3517,7 @@
     "date": "2023-08-22",
     "time": "1148",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 256.79,
     "daynight": "D"
@@ -3536,7 +3536,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 255.28,
     "daynight": "D"
@@ -3585,6 +3585,25 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
+     25.80193,
+     40.93621
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1008",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
+    "frp": 253.05,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
      25.81106,
      40.93203
     ]
@@ -3593,7 +3612,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 253.05,
     "daynight": "D"
@@ -3612,26 +3631,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
-    "frp": 253.05,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     25.80193,
-     40.93621
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1008",
-    "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 253.05,
     "daynight": "D"
@@ -3650,7 +3650,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 247.85,
     "daynight": "D"
@@ -3669,7 +3669,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 247.85,
     "daynight": "D"
@@ -3688,7 +3688,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 247.55,
     "daynight": "D"
@@ -3707,7 +3707,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 247.55,
     "daynight": "D"
@@ -3737,6 +3737,25 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
+     23.40799,
+     40.33919
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1008",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
+    "frp": 244.62,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
      23.4058,
      40.3464
     ]
@@ -3745,7 +3764,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 244.62,
     "daynight": "D"
@@ -3764,26 +3783,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
-    "frp": 244.62,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     23.40799,
-     40.33919
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1008",
-    "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 244.62,
     "daynight": "D"
@@ -3821,7 +3821,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 240.23,
     "daynight": "D"
@@ -3840,7 +3840,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 240.23,
     "daynight": "D"
@@ -3859,7 +3859,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 240.23,
     "daynight": "D"
@@ -3897,7 +3897,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 237.67,
     "daynight": "D"
@@ -3975,7 +3975,7 @@
     "sensor": "MODIS",
     "satellite": "Terra",
     "confidence": "high",
-    "frp": 229.0,
+    "frp": 229,
     "daynight": "D"
    }
   },
@@ -4060,6 +4060,25 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
+     25.79406,
+     40.91976
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1008",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "low",
+    "frp": 225.31,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
      25.79732,
      40.91377
     ]
@@ -4068,7 +4087,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 225.31,
     "daynight": "D"
@@ -4087,7 +4106,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 225.31,
     "daynight": "D"
@@ -4106,47 +4125,9 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 225.31,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     25.79406,
-     40.91976
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1008",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "low",
-    "frp": 225.31,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     25.75571,
-     40.90083
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1008",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
-    "frp": 224.04,
     "daynight": "D"
    }
   },
@@ -4163,7 +4144,26 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
+    "frp": 224.04,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.75571,
+     40.90083
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1008",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 224.04,
     "daynight": "D"
@@ -4182,9 +4182,28 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 224.04,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     23.4018,
+     40.34428
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1057",
+    "sensor": "VIIRS",
+    "satellite": "NOAA-20",
+    "confidence": "high",
+    "frp": 223.97,
     "daynight": "D"
    }
   },
@@ -4201,7 +4220,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 223.97,
     "daynight": "D"
@@ -4220,27 +4239,8 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "low",
-    "frp": 223.97,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     23.4018,
-     40.34428
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1057",
-    "sensor": "VIIRS",
-    "satellite": "N20",
-    "confidence": "high",
     "frp": 223.97,
     "daynight": "D"
    }
@@ -4260,7 +4260,7 @@
     "sensor": "MODIS",
     "satellite": "Aqua",
     "confidence": "high",
-    "frp": 223.0,
+    "frp": 223,
     "daynight": "D"
    }
   },
@@ -4296,7 +4296,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 220.94,
     "daynight": "D"
@@ -4315,7 +4315,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 220.94,
     "daynight": "D"
@@ -4345,6 +4345,25 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
+     26.04356,
+     40.9689
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "0025",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
+    "frp": 217.9,
+    "daynight": "N"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
      26.04958,
      40.97143
     ]
@@ -4353,7 +4372,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 217.9,
     "daynight": "N"
@@ -4372,26 +4391,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
-    "frp": 217.9,
-    "daynight": "N"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     26.04356,
-     40.9689
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "0025",
-    "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 217.9,
     "daynight": "N"
@@ -4459,25 +4459,6 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.74071,
-     40.88985
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1057",
-    "sensor": "VIIRS",
-    "satellite": "N20",
-    "confidence": "high",
-    "frp": 216.45,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
      25.74176,
      40.88638
     ]
@@ -4486,7 +4467,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 216.45,
     "daynight": "D"
@@ -4505,7 +4486,26 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
+    "confidence": "high",
+    "frp": 216.45,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.74071,
+     40.88985
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1057",
+    "sensor": "VIIRS",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 216.45,
     "daynight": "D"
@@ -4535,15 +4535,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.0738,
-     40.97741
+     26.06425,
+     40.97349
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "0115",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 214.39,
     "daynight": "N"
@@ -4562,7 +4562,7 @@
     "date": "2023-08-22",
     "time": "0115",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 214.39,
     "daynight": "N"
@@ -4573,15 +4573,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.06425,
-     40.97349
+     26.0738,
+     40.97741
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "0115",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 214.39,
     "daynight": "N"
@@ -4602,7 +4602,7 @@
     "sensor": "MODIS",
     "satellite": "Aqua",
     "confidence": "high",
-    "frp": 214.0,
+    "frp": 214,
     "daynight": "D"
    }
   },
@@ -4649,25 +4649,6 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.78284,
-     40.93187
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1008",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "high",
-    "frp": 209.52,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
      25.78919,
      40.93388
     ]
@@ -4676,7 +4657,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 209.52,
     "daynight": "D"
@@ -4687,16 +4668,35 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     23.41723,
-     40.34238
+     25.78284,
+     40.93187
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
+    "frp": 209.52,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     23.4252,
+     40.3531
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1008",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
     "frp": 209.43,
     "daynight": "D"
    }
@@ -4714,7 +4714,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 209.43,
     "daynight": "D"
@@ -4725,16 +4725,16 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     23.4252,
-     40.3531
+     23.41723,
+     40.34238
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
+    "satellite": "S-NPP",
+    "confidence": "high",
     "frp": 209.43,
     "daynight": "D"
    }
@@ -4773,7 +4773,7 @@
     "sensor": "MODIS",
     "satellite": "Aqua",
     "confidence": "high",
-    "frp": 208.0,
+    "frp": 208,
     "daynight": "D"
    }
   },
@@ -4790,45 +4790,7 @@
     "date": "2023-08-22",
     "time": "1147",
     "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
-    "frp": 206.94,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     22.07326,
-     38.93633
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1147",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
-    "frp": 206.94,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     22.07904,
-     38.93697
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1147",
-    "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 206.94,
     "daynight": "D"
@@ -4847,8 +4809,46 @@
     "date": "2023-08-22",
     "time": "1147",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
+    "frp": 206.94,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     22.07326,
+     38.93633
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1147",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
+    "frp": 206.94,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     22.07904,
+     38.93697
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1147",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
     "frp": 206.94,
     "daynight": "D"
    }
@@ -4866,7 +4866,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 206.7,
     "daynight": "D"
@@ -4885,7 +4885,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 206.7,
     "daynight": "D"
@@ -4934,16 +4934,16 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.73075,
-     40.88432
+     25.73517,
+     40.88882
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
-    "confidence": "high",
+    "satellite": "NOAA-20",
+    "confidence": "nominal",
     "frp": 205.86,
     "daynight": "D"
    }
@@ -4961,27 +4961,8 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
-    "frp": 205.86,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     25.73517,
-     40.88882
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1057",
-    "sensor": "VIIRS",
-    "satellite": "N20",
-    "confidence": "nominal",
     "frp": 205.86,
     "daynight": "D"
    }
@@ -4999,8 +4980,27 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
+    "frp": 205.86,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.73075,
+     40.88432
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1057",
+    "sensor": "VIIRS",
+    "satellite": "NOAA-20",
+    "confidence": "high",
     "frp": 205.86,
     "daynight": "D"
    }
@@ -5018,7 +5018,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 205.72,
     "daynight": "D"
@@ -5056,7 +5056,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 204.85,
     "daynight": "D"
@@ -5075,28 +5075,9 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 204.85,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     26.0567,
-     41.06623
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1008",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "high",
-    "frp": 204.29,
     "daynight": "D"
    }
   },
@@ -5113,8 +5094,27 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
+    "frp": 204.29,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     26.0567,
+     41.06623
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1008",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "high",
     "frp": 204.29,
     "daynight": "D"
    }
@@ -5132,7 +5132,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 204.29,
     "daynight": "D"
@@ -5151,7 +5151,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 204.29,
     "daynight": "D"
@@ -5181,25 +5181,6 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.78879,
-     40.93214
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1008",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
-    "frp": 202.96,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
      25.79823,
      40.92806
     ]
@@ -5208,7 +5189,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 202.96,
     "daynight": "D"
@@ -5227,7 +5208,26 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
+    "frp": 202.96,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.78879,
+     40.93214
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1008",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 202.96,
     "daynight": "D"
@@ -5398,7 +5398,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 198.42,
     "daynight": "D"
@@ -5417,7 +5417,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 196.28,
     "daynight": "D"
@@ -5493,7 +5493,7 @@
     "date": "2023-08-22",
     "time": "1148",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 193.88,
     "daynight": "D"
@@ -5512,7 +5512,7 @@
     "date": "2023-08-22",
     "time": "1148",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 193.88,
     "daynight": "D"
@@ -5561,15 +5561,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.06963,
-     40.98558
+     26.07983,
+     40.98931
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "0115",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 192.93,
     "daynight": "N"
@@ -5580,15 +5580,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.07983,
-     40.98931
+     26.06963,
+     40.98558
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "0115",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 192.93,
     "daynight": "N"
@@ -5607,29 +5607,10 @@
     "date": "2023-08-22",
     "time": "0115",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 192.93,
     "daynight": "N"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     25.78521,
-     40.91
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1008",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
-    "frp": 192.33,
-    "daynight": "D"
    }
   },
   {
@@ -5645,7 +5626,26 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
+    "frp": 192.33,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.78521,
+     40.91
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1008",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 192.33,
     "daynight": "D"
@@ -5664,7 +5664,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 192.33,
     "daynight": "D"
@@ -5723,7 +5723,7 @@
     "sensor": "MODIS",
     "satellite": "Aqua",
     "confidence": "high",
-    "frp": 190.0,
+    "frp": 190,
     "daynight": "N"
    }
   },
@@ -5816,7 +5816,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 187.61,
     "daynight": "D"
@@ -5854,7 +5854,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "low",
     "frp": 183.86,
     "daynight": "D"
@@ -5873,7 +5873,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 183.86,
     "daynight": "D"
@@ -5951,7 +5951,7 @@
     "sensor": "MODIS",
     "satellite": "Terra",
     "confidence": "high",
-    "frp": 179.0,
+    "frp": 179,
     "daynight": "D"
    }
   },
@@ -6025,7 +6025,7 @@
     "date": "2023-08-22",
     "time": "1148",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 176.44,
     "daynight": "D"
@@ -6063,8 +6063,27 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "low",
+    "frp": 175.79,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.52785,
+     41.16248
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1057",
+    "sensor": "VIIRS",
+    "satellite": "NOAA-20",
+    "confidence": "nominal",
     "frp": 175.79,
     "daynight": "D"
    }
@@ -6082,7 +6101,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 175.79,
     "daynight": "D"
@@ -6101,26 +6120,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
-    "confidence": "nominal",
-    "frp": 175.79,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     25.52785,
-     41.16248
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1057",
-    "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 175.79,
     "daynight": "D"
@@ -6158,7 +6158,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 173.95,
     "daynight": "D"
@@ -6177,7 +6177,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 173.95,
     "daynight": "D"
@@ -6291,7 +6291,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 170.43,
     "daynight": "D"
@@ -6310,28 +6310,9 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 170.43,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     25.51807,
-     41.16336
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1148",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
-    "frp": 169.59,
     "daynight": "D"
    }
   },
@@ -6348,8 +6329,27 @@
     "date": "2023-08-22",
     "time": "1148",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
+    "frp": 169.59,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.51807,
+     41.16336
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1148",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
     "frp": 169.59,
     "daynight": "D"
    }
@@ -6397,15 +6397,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.71605,
-     40.8595
+     25.72129,
+     40.86048
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 168.77,
     "daynight": "D"
@@ -6416,15 +6416,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.72129,
-     40.86048
+     25.71605,
+     40.8595
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 168.77,
     "daynight": "D"
@@ -6483,7 +6483,7 @@
     "sensor": "MODIS",
     "satellite": "Aqua",
     "confidence": "high",
-    "frp": 168.0,
+    "frp": 168,
     "daynight": "D"
    }
   },
@@ -6500,7 +6500,7 @@
     "date": "2023-08-22",
     "time": "1148",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 167.12,
     "daynight": "D"
@@ -6511,35 +6511,16 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     22.08281,
-     38.93258
+     22.08178,
+     38.93625
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1147",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
-    "frp": 166.62,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     22.08846,
-     38.93323
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1147",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "low",
     "frp": 166.62,
     "daynight": "D"
    }
@@ -6557,7 +6538,7 @@
     "date": "2023-08-22",
     "time": "1147",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 166.62,
     "daynight": "D"
@@ -6568,16 +6549,16 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     22.08178,
-     38.93625
+     22.08846,
+     38.93323
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1147",
     "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "high",
+    "satellite": "S-NPP",
+    "confidence": "low",
     "frp": 166.62,
     "daynight": "D"
    }
@@ -6587,17 +6568,17 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.9269,
-     40.9995
+     22.08281,
+     38.93258
     ]
    },
    "properties": {
     "date": "2023-08-22",
-    "time": "1148",
-    "sensor": "MODIS",
-    "satellite": "Aqua",
+    "time": "1147",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
     "confidence": "high",
-    "frp": 166.2,
+    "frp": 166.62,
     "daynight": "D"
    }
   },
@@ -6618,6 +6599,25 @@
     "confidence": "high",
     "frp": 166.2,
     "daynight": "N"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.9269,
+     40.9995
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1148",
+    "sensor": "MODIS",
+    "satellite": "Aqua",
+    "confidence": "high",
+    "frp": 166.2,
+    "daynight": "D"
    }
   },
   {
@@ -6758,16 +6758,16 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.19964,
-     41.11038
+     26.19667,
+     41.11631
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "high",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
     "frp": 157.54,
     "daynight": "D"
    }
@@ -6777,16 +6777,16 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.19667,
-     41.11631
+     26.19964,
+     41.11038
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
+    "satellite": "S-NPP",
+    "confidence": "high",
     "frp": 157.54,
     "daynight": "D"
    }
@@ -6815,25 +6815,6 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.03568,
-     40.97765
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "0025",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "nominal",
-    "frp": 157.08,
-    "daynight": "N"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
      26.04064,
      40.97673
     ]
@@ -6842,7 +6823,7 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 157.08,
     "daynight": "N"
@@ -6861,7 +6842,26 @@
     "date": "2023-08-22",
     "time": "0025",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
+    "confidence": "nominal",
+    "frp": 157.08,
+    "daynight": "N"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     26.03568,
+     40.97765
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "0025",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 157.08,
     "daynight": "N"
@@ -6899,7 +6899,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "low",
     "frp": 155.5,
     "daynight": "D"
@@ -6937,7 +6937,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 154.62,
     "daynight": "D"
@@ -6956,7 +6956,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 154.62,
     "daynight": "D"
@@ -6975,7 +6975,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 154.62,
     "daynight": "D"
@@ -7013,9 +7013,28 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "low",
     "frp": 153.33,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.90577,
+     40.99049
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1057",
+    "sensor": "VIIRS",
+    "satellite": "NOAA-20",
+    "confidence": "nominal",
+    "frp": 152.25,
     "daynight": "D"
    }
   },
@@ -7032,7 +7051,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 152.25,
     "daynight": "D"
@@ -7051,27 +7070,8 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
-    "frp": 152.25,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     25.90577,
-     40.99049
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1057",
-    "sensor": "VIIRS",
-    "satellite": "N20",
-    "confidence": "nominal",
     "frp": 152.25,
     "daynight": "D"
    }
@@ -7138,15 +7138,15 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.05141,
-     40.97748
+     26.06015,
+     40.98164
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "0115",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 148.57,
     "daynight": "N"
@@ -7157,15 +7157,34 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     26.06015,
-     40.98164
+     26.05792,
+     40.97546
     ]
    },
    "properties": {
     "date": "2023-08-22",
     "time": "0115",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
+    "confidence": "nominal",
+    "frp": 148.57,
+    "daynight": "N"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     26.05141,
+     40.97748
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "0115",
+    "sensor": "VIIRS",
+    "satellite": "NOAA-20",
     "confidence": "nominal",
     "frp": 148.57,
     "daynight": "N"
@@ -7184,27 +7203,8 @@
     "date": "2023-08-22",
     "time": "0115",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
-    "frp": 148.57,
-    "daynight": "N"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     26.05792,
-     40.97546
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "0115",
-    "sensor": "VIIRS",
-    "satellite": "N20",
-    "confidence": "nominal",
     "frp": 148.57,
     "daynight": "N"
    }
@@ -7233,25 +7233,6 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     25.87292,
-     40.98371
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1148",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "high",
-    "frp": 147.74,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
      25.86577,
      40.98782
     ]
@@ -7260,7 +7241,7 @@
     "date": "2023-08-22",
     "time": "1148",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 147.74,
     "daynight": "D"
@@ -7279,8 +7260,27 @@
     "date": "2023-08-22",
     "time": "1148",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
+    "frp": 147.74,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.87292,
+     40.98371
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1148",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "high",
     "frp": 147.74,
     "daynight": "D"
    }
@@ -7355,7 +7355,7 @@
     "date": "2023-08-22",
     "time": "1057",
     "sensor": "VIIRS",
-    "satellite": "N20",
+    "satellite": "NOAA-20",
     "confidence": "high",
     "frp": 146.44,
     "daynight": "D"
@@ -7395,7 +7395,26 @@
     "sensor": "MODIS",
     "satellite": "Aqua",
     "confidence": "high",
-    "frp": 146.0,
+    "frp": 146,
+    "daynight": "D"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.83874,
+     40.93549
+    ]
+   },
+   "properties": {
+    "date": "2023-08-22",
+    "time": "1008",
+    "sensor": "VIIRS",
+    "satellite": "S-NPP",
+    "confidence": "high",
+    "frp": 145.2,
     "daynight": "D"
    }
   },
@@ -7412,7 +7431,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 145.2,
     "daynight": "D"
@@ -7431,27 +7450,8 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
-    "frp": 145.2,
-    "daynight": "D"
-   }
-  },
-  {
-   "type": "Feature",
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     25.83874,
-     40.93549
-    ]
-   },
-   "properties": {
-    "date": "2023-08-22",
-    "time": "1008",
-    "sensor": "VIIRS",
-    "satellite": "N",
-    "confidence": "high",
     "frp": 145.2,
     "daynight": "D"
    }
@@ -7469,7 +7469,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 145.11,
     "daynight": "D"
@@ -7488,7 +7488,7 @@
     "date": "2023-08-22",
     "time": "1008",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 145.11,
     "daynight": "D"
@@ -7526,7 +7526,7 @@
     "date": "2023-08-22",
     "time": "1147",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "low",
     "frp": 143.58,
     "daynight": "D"
@@ -7545,7 +7545,7 @@
     "date": "2023-08-22",
     "time": "1147",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "nominal",
     "frp": 143.58,
     "daynight": "D"
@@ -7564,7 +7564,7 @@
     "date": "2023-08-22",
     "time": "1147",
     "sensor": "VIIRS",
-    "satellite": "N",
+    "satellite": "S-NPP",
     "confidence": "high",
     "frp": 143.58,
     "daynight": "D"

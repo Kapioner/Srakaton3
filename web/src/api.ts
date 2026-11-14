@@ -36,7 +36,7 @@ async function get<T>(path: string, params: Record<string, unknown> = {}): Promi
 
 export const api = {
   meta: () => get<MetaResponse>('/api/meta'),
-  calendar: (f: Filters, granularity: 'month' | 'day' = 'month', metric: Metric = 'harmonized') =>
+  calendar: (f: Filters, granularity: 'month' | 'day' = 'month', metric: Metric = 'h') =>
     get<CalendarResponse>('/api/calendar', { ...f, granularity, metric }),
   summary: (f: Filters) => get<SummaryResponse>('/api/summary', { ...f }),
   series: (f: Filters, by: 'year' | 'month' = 'year') => get<SeriesResponse>('/api/series', { ...f, by }),

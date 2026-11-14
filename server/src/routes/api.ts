@@ -2,15 +2,16 @@ import { createReadStream } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { FastifyInstance, FastifyReply } from 'fastify';
-import { config, REPO_ROOT } from '../../../shared/config.ts';
+import { config, parquetGlob, REPO_ROOT } from '../config.ts';
 import { query } from '../db.ts';
 import { parseCommon, parseEnum, parseNumber } from '../params.ts';
 
 const FIXTURES_DIR = path.join(REPO_ROOT, 'server', 'fixtures');
 
 // Stage 0: every endpoint validates its parameters and answers from server/fixtures.
-// Fixtures ignore the filters; they show the response shape with real Greece numbers.
-// Stage 3 replaces `fixture()` with DuckDB queries from src/queries/.
+// Fixtures ignore the filters; they show the response shape with real Greece numbers
+// (regenerate after an ETL run with `npm run fixtures -w server`).
+// Stage 3 replaces `fixture()` with DuckDB queries over the ETL Parquet output.
 async function fixture(reply: FastifyReply, name: string) {
   if (!config.useFixtures) {
     return reply.code(501).send({ error: 'Not implemented yet. Set USE_FIXTURES=1 to use fixtures.' });
@@ -22,9 +23,14 @@ async function fixture(reply: FastifyReply, name: string) {
 export async function apiRoutes(app: FastifyInstance) {
   app.get('/api/health', async () => {
     const [row] = await query<{ version: string }>('SELECT version() AS version');
-    const csvGlob = path.join(config.dataDir, 'modis', '*.csv').replaceAll('\\', '/');
-    const [sample] = await query<{ n: string }>(`SELECT count(*) AS n FROM read_csv_auto('${csvGlob}')`);
-    return { ok: true, duckdb: row.version, sampleModisRows: Number(sample.n), fixtures: config.useFixtures };
+    let harmonizedRows: number | null = null;
+    try {
+      const [h] = await query<{ n: string }>(`SELECT count(*) AS n FROM read_parquet('${parquetGlob('harmonized')}')`);
+      harmonizedRows = Number(h.n);
+    } catch {
+      // No ETL output yet: run `npm run etl:all`.
+    }
+    return { ok: true, duckdb: row.version, parquetDir: config.parquetDir, harmonizedRows, fixtures: config.useFixtures };
   });
 
   app.get('/api/meta', async (_req, reply) => fixture(reply, 'meta.json'));
@@ -33,7 +39,7 @@ export async function apiRoutes(app: FastifyInstance) {
     const q = req.query as Record<string, unknown>;
     parseCommon(q);
     parseEnum('granularity', q.granularity, ['month', 'day'] as const, 'month');
-    parseEnum('metric', q.metric, ['harmonized', 'raw_points', 'raw_cells'] as const, 'harmonized');
+    parseEnum('metric', q.metric, ['h', 'h_modis', 'h_viirs', 'raw'] as const, 'h');
     return fixture(reply, 'calendar.json');
   });
 
@@ -52,7 +58,7 @@ export async function apiRoutes(app: FastifyInstance) {
   app.get('/api/grid', async (req, reply) => {
     const q = req.query as Record<string, unknown>;
     parseCommon(q);
-    parseNumber('res', q.res, 0.1, 0.01, 1);
+    parseNumber('res', q.res, 0.1, 0.1, 5);
     return fixture(reply, 'grid.json');
   });
 
