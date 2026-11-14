@@ -8,6 +8,8 @@ import { ActiveFireFeedSource, type HotspotSource } from './live/firms/source.js
 import { CentroidDriftPredictor } from './live/forecast/predictor.js';
 import { SituationService } from './live/forecast/situationService.js';
 import { IngestService } from './live/ingestService.js';
+import { AcquisitionController } from './live/modeController.js';
+import { ReportService } from './live/reportService.js';
 import { HotspotRepository, IngestStateRepository } from './live/repository.js';
 import { liveRoutes } from './live/routes.js';
 import { PollingScheduler } from './live/scheduler.js';
@@ -33,15 +35,26 @@ export async function buildApp(config: AppConfig, db: Database, overrides: AppOv
   const scheduler = config.pollingEnabled
     ? new PollingScheduler(
         () => ingest.run(),
-        async () => (await state.getScope()).pollIntervalMinutes * 60_000,
+        async () => (await state.getScope()).pollIntervalSeconds * 1000,
       )
     : null;
+  const acquisition = new AcquisitionController(scheduler, config.pauseResumeMinutes);
+  const report = new ReportService(db, state, () => acquisition.current);
 
   app.get('/health', async () => ({ status: 'ok' }));
-  await app.register(liveRoutes, { prefix: '/api/live', hotspots, state, ingest, situation, scheduler });
+  await app.register(liveRoutes, {
+    prefix: '/api/live',
+    hotspots,
+    state,
+    ingest,
+    situation,
+    report,
+    acquisition,
+  });
   // The archive/calendar API registers here, next to the live feature, on the same Database.
 
-  app.addHook('onReady', async () => scheduler?.start());
-  app.addHook('onClose', async () => scheduler?.stop());
+  // Starts in realtime: polling begins as soon as the server is ready.
+  app.addHook('onReady', async () => acquisition.start());
+  app.addHook('onClose', async () => acquisition.shutdown());
   return app;
 }

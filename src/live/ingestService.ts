@@ -14,9 +14,12 @@ interface Logger {
   error(obj: unknown, msg?: string): void;
 }
 
+export type IngestListener = (run: IngestRun) => void;
+
 /** Pulls the current scope from FIRMS into DuckDB. One run at a time. */
 export class IngestService {
   private running: Promise<IngestRun> | null = null;
+  private readonly listeners = new Set<IngestListener>();
 
   constructor(
     private readonly source: HotspotSource,
@@ -34,6 +37,12 @@ export class IngestService {
   run(): Promise<IngestRun> {
     this.running ??= this.execute().finally(() => (this.running = null));
     return this.running;
+  }
+
+  /** Observer: called after every finished run. Returns an unsubscribe function. */
+  subscribe(listener: IngestListener): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   /** Replaces the scope; the next run downloads everything afresh. */
@@ -63,6 +72,13 @@ export class IngestService {
     };
     await this.state.recordRun(run);
     this.log.info({ status: run.status, inserted: run.inserted }, 'live ingest finished');
+    for (const listener of this.listeners) {
+      try {
+        listener(run);
+      } catch (error) {
+        this.log.error({ err: error }, 'ingest listener failed');
+      }
+    }
     return run;
   }
 

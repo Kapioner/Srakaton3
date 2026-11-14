@@ -37,16 +37,25 @@ export interface IngestScope {
   window: FeedWindow;
   /** Optional spatial filter applied on top of the FIRMS region file. */
   bbox: BBox | null;
-  pollIntervalMinutes: number;
+  /** Delay between the end of one ingest run and the start of the next. */
+  pollIntervalSeconds: number;
 }
 
+/** Realtime default: the whole world, every sensor, refreshed every 30 seconds. */
 export const DEFAULT_SCOPE: IngestScope = {
-  region: 'Europe',
+  region: 'Global',
   sensors: [...SENSORS],
   window: '24h',
   bbox: null,
-  pollIntervalMinutes: 30,
+  pollIntervalSeconds: 30,
 };
+
+/**
+ * What the user is doing in the frontend. Only `realtime` pulls from FIRMS:
+ * browsing the archive or working with a forecast freezes the live data.
+ */
+export const MODES = ['realtime', 'archive', 'forecast'] as const;
+export type Mode = (typeof MODES)[number];
 
 /**
  * Common harmonization grid: 0.01° ≈ 1.1 km, i.e. the MODIS pixel size.

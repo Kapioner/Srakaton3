@@ -15,6 +15,10 @@ export interface HotspotFilter {
   to?: Date;
   /** Minimum confidence class to include. */
   minConfidence?: ConfidenceClass;
+  /** Only rows stored after this moment (exclusive): incremental map updates. */
+  ingestedAfter?: Date;
+  /** Only rows stored up to this moment (inclusive): pins a query to a cursor. */
+  ingestedUntil?: Date;
 }
 
 /** A detection reduced to what the situation/forecast engine needs. */
@@ -128,6 +132,17 @@ export class HotspotRepository {
     );
   }
 
+  /**
+   * Latest storage time in the table, as an ISO string with milliseconds.
+   * Clients pass it back as `since` to receive only rows stored afterwards.
+   */
+  async cursor(): Promise<string | null> {
+    const [row] = await this.db.all(
+      `SELECT strftime(max(ingested_at), '%Y-%m-%dT%H:%M:%S.%gZ') AS cursor FROM live_hotspots`,
+    );
+    return row?.cursor ?? null;
+  }
+
   async stats(): Promise<Row> {
     const [row] = await this.db.all(
       `SELECT CAST(count(*) AS INTEGER) AS hotspots,
@@ -171,6 +186,14 @@ function buildWhere(filter: HotspotFilter): { where: string; params: SqlParams }
     conditions.push('acq_ts <= CAST($to AS TIMESTAMP)');
     params.to = toSqlTimestamp(filter.to);
   }
+  if (filter.ingestedAfter) {
+    conditions.push('ingested_at > CAST($ingestedAfter AS TIMESTAMP)');
+    params.ingestedAfter = toSqlTimestamp(filter.ingestedAfter);
+  }
+  if (filter.ingestedUntil) {
+    conditions.push('ingested_at <= CAST($ingestedUntil AS TIMESTAMP)');
+    params.ingestedUntil = toSqlTimestamp(filter.ingestedUntil);
+  }
   if (filter.minConfidence && filter.minConfidence !== 'low') {
     const allowed = CONFIDENCE_CLASSES.slice(CONFIDENCE_CLASSES.indexOf(filter.minConfidence));
     conditions.push(`confidence_class IN (${allowed.map((c) => `'${c}'`).join(', ')})`);
@@ -184,7 +207,14 @@ export class IngestStateRepository {
 
   async getScope(): Promise<IngestScope> {
     const [row] = await this.db.all('SELECT scope FROM live_scope WHERE id = 1');
-    return row ? { ...DEFAULT_SCOPE, ...JSON.parse(row.scope) } : DEFAULT_SCOPE;
+    if (!row) return DEFAULT_SCOPE;
+    // Unknown keys from older versions (e.g. pollIntervalMinutes) are dropped.
+    const stored = JSON.parse(row.scope);
+    const scope = { ...DEFAULT_SCOPE };
+    for (const key of Object.keys(DEFAULT_SCOPE) as (keyof IngestScope)[]) {
+      if (stored[key] !== undefined) (scope as any)[key] = stored[key];
+    }
+    return scope;
   }
 
   async saveScope(scope: IngestScope, now: Date): Promise<void> {

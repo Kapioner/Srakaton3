@@ -29,10 +29,11 @@ const MODIS_CSV = [
 ].join('\n') + '\n';
 
 test('live feature: scope → ingest → query → situation → forecast', async (t) => {
-  const firms = await startFakeFirms({
+  const files: Record<string, string> = {
     '/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_Europe_48h.csv': VIIRS_CSV,
     '/modis-c6.1/csv/MODIS_C6_1_Europe_48h.csv': MODIS_CSV,
-  });
+  };
+  const firms = await startFakeFirms(files);
   const db = await Database.open(':memory:');
   const app = await buildApp(
     {
@@ -42,6 +43,7 @@ test('live feature: scope → ingest → query → situation → forecast', asyn
       firmsBaseUrl: firms.baseUrl,
       pollingEnabled: false,
       retentionDays: 14,
+      pauseResumeMinutes: 60,
       tmpDir: path.join(os.tmpdir(), `firewatch-test-${process.pid}`),
     },
     db,
@@ -51,6 +53,14 @@ test('live feature: scope → ingest → query → situation → forecast', asyn
     await app.close();
     db.close();
     firms.close();
+  });
+
+  await t.test('defaults to the whole world, refreshed every 30 s, in realtime mode', async () => {
+    const scope = (await app.inject('/api/live/scope')).json();
+    assert.equal(scope.region, 'Global');
+    assert.equal(scope.pollIntervalSeconds, 30);
+    assert.equal(scope.sensors.length, 4);
+    assert.equal((await app.inject('/api/live/mode')).json().mode, 'realtime');
   });
 
   await t.test('rejects an invalid scope', async () => {
@@ -120,6 +130,108 @@ test('live feature: scope → ingest → query → situation → forecast', asyn
     assert.ok(track.properties.bearingDeg > 60 && track.properties.bearingDeg < 120, `bearing ${track.properties.bearingDeg}`);
     assert.ok(track.properties.speedKmh > 0);
     assert.ok(areas[1].properties.center[0] > areas[0].properties.center[0]);
+  });
+
+  await t.test('serves hotspots as GeoJSON points for the map', async () => {
+    const body = (await app.inject('/api/live/hotspots?format=geojson')).json();
+    assert.equal(body.type, 'FeatureCollection');
+    assert.equal(body.features.length, 8);
+    const [lon, lat] = body.features[0].geometry.coordinates;
+    assert.ok(lon > 23 && lon < 24 && lat > 38 && lat < 38.2);
+    assert.ok(body.features[0].properties.acq_datetime);
+    assert.equal(body.features[0].properties.latitude, undefined);
+    assert.match(body.metadata.cursor, /\.\d{3}Z$/);
+  });
+
+  await t.test('returns only newly stored hotspots after a cursor', async () => {
+    const { cursor } = (await app.inject('/api/live/hotspots?format=geojson')).json().metadata;
+    const none = (await app.inject(`/api/live/hotspots?format=geojson&since=${cursor}`)).json();
+    assert.equal(none.features.length, 0);
+    assert.equal(none.metadata.cursor, cursor);
+
+    // FIRMS publishes a new overpass: one more detection in the VIIRS file.
+    const d = hoursAgo(1);
+    files['/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_Europe_48h.csv'] +=
+      `38.11000,23.56000,350.0,0.39,0.36,${acqDate(d)},${acqTime(d)},N,high,2.0NRT,292.0,41.0,D\n`;
+    await new Promise((r) => setTimeout(r, 5)); // distinct ingestion timestamp
+    const run = (await app.inject({ method: 'POST', url: '/api/live/ingest' })).json();
+    assert.equal(run.inserted, 1);
+
+    const fresh = (await app.inject(`/api/live/hotspots?format=geojson&since=${cursor}`)).json();
+    assert.equal(fresh.features.length, 1);
+    assert.equal(fresh.features[0].properties.frp, 41);
+    assert.ok(fresh.metadata.cursor > cursor);
+  });
+
+  await t.test('pushes an event to listeners after each ingest', async () => {
+    const address = await app.listen({ port: 0, host: '127.0.0.1' });
+    const controller = new AbortController();
+    const res = await fetch(`${address}/api/live/events`, { signal: controller.signal });
+    assert.equal(res.headers.get('content-type'), 'text/event-stream; charset=utf-8');
+    const reader = res.body!.pipeThrough(new TextDecoderStream()).getReader();
+    let buffer = '';
+    const waitFor = async (event: string) => {
+      while (!buffer.includes(`event: ${event}`)) buffer += (await reader.read()).value ?? '';
+      const block = buffer.slice(buffer.indexOf(`event: ${event}`)).split('\n\n')[0];
+      buffer = '';
+      return JSON.parse(block.split('data: ')[1]);
+    };
+
+    assert.ok((await waitFor('hello')).cursor);
+    await app.inject({ method: 'POST', url: '/api/live/ingest' });
+    const event = await waitFor('ingest');
+    assert.equal(event.status, 'partial');
+    assert.equal(event.inserted, 0);
+    assert.ok(event.cursor);
+
+    await app.inject({ method: 'PUT', url: '/api/live/mode', payload: { mode: 'forecast' } });
+    const mode = await waitFor('mode');
+    assert.equal(mode.mode, 'forecast');
+    assert.equal(mode.acquiring, false);
+    await app.inject({ method: 'PUT', url: '/api/live/mode', payload: { mode: 'realtime' } });
+    assert.equal((await waitFor('mode')).mode, 'realtime');
+    controller.abort();
+  });
+
+  await t.test('reports on the selected area', async () => {
+    const body = (await app.inject('/api/live/report?bbox=19,34,29,42&hours=48')).json();
+    assert.equal(body.area.source, 'request');
+    assert.equal(body.totals.detections, 9);
+    assert.ok(body.totals.activeCells > 0 && body.totals.activeCells <= 9);
+    assert.equal(body.totals.maxFrpMw, 41);
+    assert.equal(body.byConfidence.reduce((sum: number, c: any) => sum + c.detections, 0), 9);
+    assert.deepEqual(body.bySatellite.map((s: any) => s.satellite).sort(), ['Aqua', 'SNPP', 'Terra']);
+    assert.ok(body.timeline.length >= 48 && body.timeline.length <= 50);
+    assert.equal(body.timeline.reduce((sum: number, h: any) => sum + h.detections, 0), 9);
+    assert.ok(Math.abs(body.topAreas[0].lon - 23.53) < 0.1);
+    assert.equal(body.acquisition.mode, 'realtime');
+
+    const elsewhere = (await app.inject('/api/live/report?bbox=0,0,1,1')).json();
+    assert.equal(elsewhere.totals.detections, 0);
+    assert.equal(elsewhere.topAreas.length, 0);
+  });
+
+  await t.test('pauses acquisition while the user browses the archive', async () => {
+    const paused = (await app.inject({ method: 'PUT', url: '/api/live/mode', payload: { mode: 'archive' } })).json();
+    assert.equal(paused.mode, 'archive');
+    assert.equal(paused.acquiring, false);
+    assert.ok(paused.resumeAt, 'a pause expires by default');
+
+    const before = firms.requests.length;
+    const ingest = await app.inject({ method: 'POST', url: '/api/live/ingest' });
+    assert.equal(ingest.statusCode, 409);
+    // A scope change while paused is stored but not fetched.
+    const scope = { region: 'Europe', sensors: ['MODIS'], window: '48h' };
+    assert.equal((await app.inject({ method: 'PUT', url: '/api/live/scope', payload: scope })).json().acquiring, false);
+    await new Promise((r) => setTimeout(r, 50));
+    assert.equal(firms.requests.length, before);
+
+    const status = (await app.inject('/api/live/status')).json();
+    assert.equal(status.mode.mode, 'archive');
+
+    const resumed = (await app.inject({ method: 'PUT', url: '/api/live/mode', payload: { mode: 'realtime' } })).json();
+    assert.equal(resumed.resumeAt, null);
+    assert.equal((await app.inject({ method: 'POST', url: '/api/live/ingest' })).statusCode, 200);
   });
 
   await t.test('rejects a malformed bbox', async () => {
